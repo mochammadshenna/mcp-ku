@@ -17,4 +17,18 @@ require (
 	github.com/ollama/ollama v0.1.32
 	github.com/stretchr/testify v1.9.0
 	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/gin-contrib/cors v1.7.0
+	github.com/gin-contrib/requestid v0.1.1
+	github.com/redis/go-redis/v9 v9.5.1
+	github.com/prometheus/client_golang v1.19.1
+	github.com/go-playground/universal-translator v0.18.1
+	github.com/go-playground/locales v0.14.1
+	github.com/uber-go/automaxprocs v1.5.3
+	github.com/swaggo/gin-swagger v1.6.0
+	github.com/swaggo/files v1.0.1
+	github.com/swaggo/swag v1.16.3
+	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/golangci/golangci-lint v1.57.2
+	github.com/go-delve/delve v1.23.0
+	github.com/air-verse/air v1.51.0
 )

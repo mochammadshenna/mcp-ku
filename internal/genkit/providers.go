@@ -39,6 +39,7 @@ func (p *GoogleAIProvider) GenerateContent(ctx context.Context, req *GenerateCon
 		},
 	}
 	
+	p.logger.Debugf("Generated content with Google AI model: %s", req.Model)
 	return response, nil
 }
 
@@ -77,6 +78,7 @@ func (p *GoogleAIProvider) EmbedText(ctx context.Context, text string) ([]float6
 	for i := range embeddings {
 		embeddings[i] = float64(i) / 768.0
 	}
+	p.logger.Debugf("Generated embeddings for text length: %d", len(text))
 	return embeddings, nil
 }
 
@@ -85,6 +87,7 @@ func (p *GoogleAIProvider) ListModels(ctx context.Context) ([]string, error) {
 }
 
 func (p *GoogleAIProvider) Close() error {
+	p.logger.Debug("Google AI provider closed")
 	return nil
 }
 
@@ -165,6 +168,7 @@ func (p *OpenAIProvider) GenerateContent(ctx context.Context, req *GenerateConte
 		}
 	}
 	
+	p.logger.Debugf("Generated content with OpenAI model: %s", req.Model)
 	return response, nil
 }
 
@@ -235,6 +239,7 @@ func (p *OpenAIProvider) EmbedText(ctx context.Context, text string) ([]float64,
 		return nil, fmt.Errorf("no embeddings returned")
 	}
 	
+	p.logger.Debugf("Generated embeddings with OpenAI for text length: %d", len(text))
 	return resp.Data[0].Embedding, nil
 }
 
@@ -243,6 +248,7 @@ func (p *OpenAIProvider) ListModels(ctx context.Context) ([]string, error) {
 }
 
 func (p *OpenAIProvider) Close() error {
+	p.logger.Debug("OpenAI provider closed")
 	return nil
 }
 
@@ -275,6 +281,7 @@ func (p *AnthropicProvider) GenerateContent(ctx context.Context, req *GenerateCo
 		},
 	}
 	
+	p.logger.Debugf("Generated content with Anthropic model: %s", req.Model)
 	return response, nil
 }
 
@@ -315,6 +322,7 @@ func (p *AnthropicProvider) ListModels(ctx context.Context) ([]string, error) {
 }
 
 func (p *AnthropicProvider) Close() error {
+	p.logger.Debug("Anthropic provider closed")
 	return nil
 }
 
@@ -345,6 +353,7 @@ func (p *VertexAIProvider) GenerateContent(ctx context.Context, req *GenerateCon
 		},
 	}
 	
+	p.logger.Debugf("Generated content with Vertex AI model: %s", req.Model)
 	return response, nil
 }
 
@@ -381,6 +390,7 @@ func (p *VertexAIProvider) EmbedText(ctx context.Context, text string) ([]float6
 	for i := range embeddings {
 		embeddings[i] = float64(i) / 768.0
 	}
+	p.logger.Debugf("Generated embeddings with Vertex AI for text length: %d", len(text))
 	return embeddings, nil
 }
 
@@ -389,6 +399,7 @@ func (p *VertexAIProvider) ListModels(ctx context.Context) ([]string, error) {
 }
 
 func (p *VertexAIProvider) Close() error {
+	p.logger.Debug("Vertex AI provider closed")
 	return nil
 }
 
@@ -419,6 +430,7 @@ func (p *OllamaProvider) GenerateContent(ctx context.Context, req *GenerateConte
 		},
 	}
 	
+	p.logger.Debugf("Generated content with Ollama model: %s", req.Model)
 	return response, nil
 }
 
@@ -455,6 +467,7 @@ func (p *OllamaProvider) EmbedText(ctx context.Context, text string) ([]float64,
 	for i := range embeddings {
 		embeddings[i] = float64(i) / 768.0
 	}
+	p.logger.Debugf("Generated embeddings with Ollama for text length: %d", len(text))
 	return embeddings, nil
 }
 
@@ -463,5 +476,6 @@ func (p *OllamaProvider) ListModels(ctx context.Context) ([]string, error) {
 }
 
 func (p *OllamaProvider) Close() error {
+	p.logger.Debug("Ollama provider closed")
 	return nil
 }

@@ -15,6 +15,9 @@ type Config struct {
 	Firebase Firebase
 	AI       AI
 	Logger   Logger
+	Redis    Redis
+	Security Security
+	Monitoring Monitoring
 }
 
 type Database struct {
@@ -24,6 +27,8 @@ type Database struct {
 	User     string
 	Password string
 	Name     string
+	MaxConns int
+	MinConns int
 }
 
 type Server struct {
@@ -71,6 +76,23 @@ type Logger struct {
 	Level logrus.Level
 }
 
+type Redis struct {
+	URL      string
+	Password string
+	DB       int
+}
+
+type Security struct {
+	SecretKey               string
+	RateLimitRequestsPerMin int
+}
+
+type Monitoring struct {
+	EnableMetrics bool
+	MetricsPort   string
+	EnableTracing bool
+}
+
 func Load() *Config {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
@@ -79,12 +101,14 @@ func Load() *Config {
 
 	return &Config{
 		Database: Database{
-			URL:      getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/mcp_octo_enigma?sslmode=disable"),
+			URL:      getEnv("DATABASE_URL", "postgres://mcp_user:mcp_password@localhost:5432/mcp_octo_enigma?sslmode=disable"),
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvAsInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "user"),
-			Password: getEnv("DB_PASSWORD", "password"),
+			User:     getEnv("DB_USER", "mcp_user"),
+			Password: getEnv("DB_PASSWORD", "mcp_password"),
 			Name:     getEnv("DB_NAME", "mcp_octo_enigma"),
+			MaxConns: getEnvAsInt("DB_MAX_CONNS", 25),
+			MinConns: getEnvAsInt("DB_MIN_CONNS", 5),
 		},
 		Server: Server{
 			Port:           getEnv("MCP_SERVER_PORT", "8080"),
@@ -117,6 +141,20 @@ func Load() *Config {
 		Logger: Logger{
 			Level: getLogLevel(getEnv("LOG_LEVEL", "info")),
 		},
+		Redis: Redis{
+			URL:      getEnv("REDIS_URL", "redis://localhost:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
+		},
+		Security: Security{
+			SecretKey:               getEnv("API_SECRET_KEY", "default-secret-key"),
+			RateLimitRequestsPerMin: getEnvAsInt("RATE_LIMIT_REQUESTS_PER_MINUTE", 100),
+		},
+		Monitoring: Monitoring{
+			EnableMetrics: getEnvAsBool("ENABLE_METRICS", true),
+			MetricsPort:   getEnv("METRICS_PORT", "9090"),
+			EnableTracing: getEnvAsBool("ENABLE_TRACING", true),
+		},
 	}
 }
 
@@ -130,6 +168,15 @@ func getEnv(key, defaultValue string) string {
 func getEnvAsInt(key string, defaultValue int) int {
 	if valueStr := os.Getenv(key); valueStr != "" {
 		if value, err := strconv.Atoi(valueStr); err == nil {
+			return value
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+	if valueStr := os.Getenv(key); valueStr != "" {
+		if value, err := strconv.ParseBool(valueStr); err == nil {
 			return value
 		}
 	}

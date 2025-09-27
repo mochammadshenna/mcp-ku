@@ -265,5 +265,6 @@ func (s *Service) Close() error {
 		s.ollama.Close()
 	}
 
+	s.logger.Info("Genkit service closed")
 	return nil
 }

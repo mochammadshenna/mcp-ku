@@ -11,6 +11,8 @@ import (
 	"mcp-octo-enigma/internal/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swaggo/gin-swagger"
+	"github.com/swaggo/files"
 )
 
 // Server represents the HTTP server
@@ -22,8 +24,8 @@ type Server struct {
 
 // NewServer creates a new server instance
 func NewServer(c *container.Container) *Server {
-	// Set Gin mode
-	if c.Logger.Level == c.Logger.Level.DebugLevel {
+	// Set Gin mode based on log level
+	if c.Logger.Level.String() == "debug" {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -64,10 +66,15 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.Logger(s.container.Logger))
 
 	// Rate limiting middleware
-	s.router.Use(middleware.RateLimit())
+	s.router.Use(middleware.RateLimit(s.container.Config.Security.RateLimitRequestsPerMin))
 
 	// Authentication middleware for protected routes
-	s.router.Use(middleware.Auth())
+	s.router.Use(middleware.Auth(s.container.Config.Security.SecretKey))
+
+	// Metrics middleware
+	if s.container.Config.Monitoring.EnableMetrics {
+		s.router.Use(middleware.Metrics())
+	}
 }
 
 // setupRoutes configures API routes
@@ -75,20 +82,12 @@ func (s *Server) setupRoutes() {
 	// Health check
 	s.router.GET("/health", handlers.HealthCheck(s.container))
 
+	// Swagger documentation
+	s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// API v1 routes
 	v1 := s.router.Group("/api/v1")
 	{
-		// MCP routes
-		mcp := v1.Group("/mcp")
-		{
-			mcp.POST("/generate", handlers.GenerateContent(s.container))
-			mcp.POST("/flow", handlers.ExecuteFlow(s.container))
-			mcp.POST("/tools/call", handlers.CallTool(s.container))
-			mcp.GET("/servers", handlers.ListServers(s.container))
-			mcp.POST("/servers", handlers.RegisterServer(s.container))
-			mcp.DELETE("/servers/:id", handlers.UnregisterServer(s.container))
-		}
-
 		// Content generation routes
 		content := v1.Group("/content")
 		{
@@ -106,6 +105,7 @@ func (s *Server) setupRoutes() {
 			flows.PUT("/:id", handlers.UpdateFlow(s.container))
 			flows.DELETE("/:id", handlers.DeleteFlow(s.container))
 			flows.POST("/:id/execute", handlers.ExecuteFlow(s.container))
+			flows.GET("/:id/executions", handlers.ListFlowExecutions(s.container))
 		}
 
 		// Tool routes
@@ -122,6 +122,19 @@ func (s *Server) setupRoutes() {
 			vectors.POST("/embed", handlers.EmbedText(s.container))
 			vectors.POST("/search", handlers.SearchVectors(s.container))
 			vectors.POST("/index", handlers.IndexDocument(s.container))
+			vectors.GET("/documents", handlers.ListDocuments(s.container))
+			vectors.DELETE("/documents/:id", handlers.DeleteDocument(s.container))
+		}
+
+		// MCP Server routes
+		mcp := v1.Group("/mcp")
+		{
+			mcp.GET("/servers", handlers.ListServers(s.container))
+			mcp.POST("/servers", handlers.RegisterServer(s.container))
+			mcp.DELETE("/servers/:id", handlers.UnregisterServer(s.container))
+			mcp.GET("/servers/:id/status", handlers.GetServerStatus(s.container))
+			mcp.POST("/servers/:id/connect", handlers.ConnectServer(s.container))
+			mcp.POST("/servers/:id/disconnect", handlers.DisconnectServer(s.container))
 		}
 
 		// Evaluation routes
@@ -129,6 +142,7 @@ func (s *Server) setupRoutes() {
 		{
 			eval.POST("/run", handlers.RunEvaluation(s.container))
 			eval.GET("/results", handlers.GetEvaluationResults(s.container))
+			eval.GET("/results/:id", handlers.GetEvaluationResult(s.container))
 		}
 
 		// Observability routes
@@ -136,13 +150,23 @@ func (s *Server) setupRoutes() {
 		{
 			observability.GET("/metrics", handlers.GetMetrics(s.container))
 			observability.GET("/traces", handlers.GetTraces(s.container))
+			observability.GET("/health", handlers.HealthCheck(s.container))
+		}
+
+		// Generation management routes
+		generations := v1.Group("/generations")
+		{
+			generations.GET("/", handlers.ListGenerations(s.container))
+			generations.GET("/:id", handlers.GetGeneration(s.container))
+			generations.DELETE("/:id", handlers.DeleteGeneration(s.container))
+			generations.GET("/request/:request_id", handlers.GetGenerationByRequestID(s.container))
 		}
 	}
 }
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
-	s.container.Logger.Infof("Starting server on port %s", s.container.Config.Server.Port)
+	s.container.Logger.Infof("Starting MCP server on port %s", s.container.Config.Server.Port)
 	return s.httpServer.ListenAndServe()
 }
 

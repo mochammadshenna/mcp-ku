@@ -11,6 +11,8 @@ import (
 
 	"mcp-octo-enigma/internal/config"
 	"mcp-octo-enigma/internal/types"
+
+	"github.com/sirupsen/logrus"
 )
 
 // MCPClient represents the MCP client
@@ -18,6 +20,7 @@ type MCPClient struct {
 	config     *config.Config
 	httpClient *http.Client
 	baseURL    string
+	logger     *logrus.Logger
 }
 
 // GenerateRequest represents a content generation request
@@ -27,13 +30,28 @@ type GenerateRequest struct {
 	Parameters  map[string]interface{} `json:"parameters,omitempty"`
 	Tools       []types.Tool           `json:"tools,omitempty"`
 	Stream      bool                   `json:"stream,omitempty"`
+	RequestID   string                 `json:"request_id,omitempty"`
 }
 
 // GenerateResponse represents a content generation response
 type GenerateResponse struct {
-	Content   string                 `json:"content"`
-	Metadata  map[string]interface{} `json:"metadata,omitempty"`
-	ToolCalls []types.ToolCall       `json:"tool_calls,omitempty"`
+	ID          string                 `json:"id"`
+	Content     string                 `json:"content"`
+	Model       string                 `json:"model"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ToolCalls   []types.ToolCall       `json:"tool_calls,omitempty"`
+	Usage       *UsageInfo             `json:"usage,omitempty"`
+	RequestID   string                 `json:"request_id,omitempty"`
+	Status      string                 `json:"status"`
+	CreatedAt   time.Time              `json:"created_at"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
+}
+
+// UsageInfo represents token usage information
+type UsageInfo struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
 }
 
 // FlowRequest represents a flow execution request
@@ -41,22 +59,39 @@ type FlowRequest struct {
 	FlowID     string                 `json:"flow_id"`
 	Input      map[string]interface{} `json:"input"`
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	RequestID  string                 `json:"request_id,omitempty"`
 }
 
 // FlowResponse represents a flow execution response
 type FlowResponse struct {
-	Output   map[string]interface{} `json:"output"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	FlowID    string                 `json:"flow_id"`
+	Output    map[string]interface{} `json:"output"`
+	RequestID string                 `json:"request_id,omitempty"`
+	Status    string                 `json:"status"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// StreamChunk represents a streaming response chunk
+type StreamChunk struct {
+	ID        string                 `json:"id"`
+	Content   string                 `json:"content"`
+	Done      bool                   `json:"done"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+	RequestID string                 `json:"request_id,omitempty"`
 }
 
 // NewMCPClient creates a new MCP client
 func NewMCPClient(cfg *config.Config) *MCPClient {
+	logger := logrus.New()
+	logger.SetLevel(cfg.Logger.Level)
+
 	return &MCPClient{
 		config: cfg,
 		httpClient: &http.Client{
 			Timeout: cfg.Server.ClientTimeout,
 		},
 		baseURL: fmt.Sprintf("http://localhost:%s/api/v1", cfg.Server.Port),
+		logger:  logger,
 	}
 }
 
@@ -78,6 +113,7 @@ func (c *MCPClient) Connect(ctx context.Context) error {
 		return fmt.Errorf("MCP server health check failed with status: %d", resp.StatusCode)
 	}
 
+	c.logger.Info("Connected to MCP server")
 	return nil
 }
 
@@ -87,7 +123,7 @@ func (c *MCPClient) GenerateContent(ctx context.Context, req *GenerateRequest) (
 }
 
 // GenerateContentStream generates content with streaming
-func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequest) (<-chan string, error) {
+func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequest) (<-chan *StreamChunk, error) {
 	req.Stream = true
 	
 	reqBody, err := json.Marshal(req)
@@ -102,6 +138,7 @@ func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequ
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "text/event-stream")
+	httpReq.Header.Set("Authorization", "Bearer "+c.config.Security.SecretKey)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -113,7 +150,7 @@ func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequ
 		return nil, fmt.Errorf("server returned status: %d", resp.StatusCode)
 	}
 
-	ch := make(chan string)
+	ch := make(chan *StreamChunk)
 	go func() {
 		defer resp.Body.Close()
 		defer close(ch)
@@ -124,17 +161,19 @@ func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequ
 			case <-ctx.Done():
 				return
 			default:
-				var chunk map[string]interface{}
+				var chunk StreamChunk
 				if err := decoder.Decode(&chunk); err != nil {
 					if err == io.EOF {
 						return
 					}
-					// Log error but continue
+					c.logger.Errorf("Failed to decode stream chunk: %v", err)
 					continue
 				}
 
-				if content, ok := chunk["content"].(string); ok {
-					ch <- content
+				ch <- &chunk
+				
+				if chunk.Done {
+					return
 				}
 			}
 		}
@@ -166,6 +205,12 @@ func (c *MCPClient) RegisterServer(ctx context.Context, server *types.MCPServer)
 	return err
 }
 
+// UnregisterServer unregisters an MCP server
+func (c *MCPClient) UnregisterServer(ctx context.Context, serverID string) error {
+	_, err := c.makeRequest(ctx, "DELETE", "/mcp/servers/"+serverID, nil, nil)
+	return err
+}
+
 // InterruptGeneration interrupts ongoing content generation
 func (c *MCPClient) InterruptGeneration(ctx context.Context, requestID string) error {
 	req := map[string]string{"request_id": requestID}
@@ -174,8 +219,8 @@ func (c *MCPClient) InterruptGeneration(ctx context.Context, requestID string) e
 }
 
 // EmbedText embeds text using vector embeddings
-func (c *MCPClient) EmbedText(ctx context.Context, text string) ([]float64, error) {
-	req := map[string]string{"text": text}
+func (c *MCPClient) EmbedText(ctx context.Context, text string, model string) ([]float64, error) {
+	req := map[string]string{"text": text, "model": model}
 	var response map[string][]float64
 	_, err := c.makeRequest(ctx, "POST", "/vectors/embed", req, &response)
 	if err != nil {
@@ -185,19 +230,60 @@ func (c *MCPClient) EmbedText(ctx context.Context, text string) ([]float64, erro
 }
 
 // SearchVectors searches for similar vectors
-func (c *MCPClient) SearchVectors(ctx context.Context, query []float64, limit int) ([]types.VectorSearchResult, error) {
+func (c *MCPClient) SearchVectors(ctx context.Context, query []float64, limit int, threshold float64) ([]types.VectorSearchResult, error) {
 	req := map[string]interface{}{
-		"query": query,
-		"limit": limit,
+		"query":     query,
+		"limit":     limit,
+		"threshold": threshold,
 	}
 	var results []types.VectorSearchResult
 	_, err := c.makeRequest(ctx, "POST", "/vectors/search", req, &results)
 	return results, err
 }
 
+// IndexDocument indexes a document with vector embeddings
+func (c *MCPClient) IndexDocument(ctx context.Context, content string, source string, metadata map[string]interface{}, model string) (string, error) {
+	req := map[string]interface{}{
+		"content":  content,
+		"source":   source,
+		"metadata": metadata,
+		"model":    model,
+	}
+	var response map[string]string
+	_, err := c.makeRequest(ctx, "POST", "/vectors/index", req, &response)
+	if err != nil {
+		return "", err
+	}
+	return response["document_id"], nil
+}
+
+// ListTools lists available tools
+func (c *MCPClient) ListTools(ctx context.Context) ([]types.Tool, error) {
+	var response map[string][]types.Tool
+	_, err := c.makeRequest(ctx, "GET", "/tools/", nil, &response)
+	if err != nil {
+		return nil, err
+	}
+	return response["tools"], nil
+}
+
+// GetHealth gets the health status of the server
+func (c *MCPClient) GetHealth(ctx context.Context) (map[string]interface{}, error) {
+	var health map[string]interface{}
+	_, err := c.makeRequest(ctx, "GET", "/../health", nil, &health)
+	return health, err
+}
+
+// GetMetrics gets system metrics
+func (c *MCPClient) GetMetrics(ctx context.Context) (map[string]interface{}, error) {
+	var metrics map[string]interface{}
+	_, err := c.makeRequest(ctx, "GET", "/observability/metrics", nil, &metrics)
+	return metrics, err
+}
+
 // Close closes the client connection
 func (c *MCPClient) Close() error {
-	// Close any open connections
+	c.logger.Info("MCP client closed")
 	return nil
 }
 
@@ -220,7 +306,10 @@ func (c *MCPClient) makeRequest(ctx context.Context, method, path string, reqBod
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	req.Header.Set("Authorization", "Bearer "+c.config.Security.SecretKey)
 
+	c.logger.Debugf("Making %s request to %s", method, path)
+	
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)

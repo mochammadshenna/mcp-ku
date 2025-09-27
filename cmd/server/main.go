@@ -16,6 +16,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @title MCP Octo Enigma API
+// @version 1.0
+// @description Advanced MCP Server with Genkit integration
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	// Load configuration
 	cfg := config.Load()

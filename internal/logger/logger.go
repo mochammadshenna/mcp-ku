@@ -29,3 +29,18 @@ func New(level logrus.Level) *logrus.Logger {
 func WithFields(logger *logrus.Logger, fields logrus.Fields) *logrus.Entry {
 	return logger.WithFields(fields)
 }
+
+// WithRequestID creates a logger with request ID
+func WithRequestID(logger *logrus.Logger, requestID string) *logrus.Entry {
+	return logger.WithField("request_id", requestID)
+}
+
+// WithUserID creates a logger with user ID
+func WithUserID(logger *logrus.Logger, userID string) *logrus.Entry {
+	return logger.WithField("user_id", userID)
+}
+
+// WithOperation creates a logger with operation context
+func WithOperation(logger *logrus.Logger, operation string) *logrus.Entry {
+	return logger.WithField("operation", operation)
+}

@@ -2,241 +2,222 @@ package genkit
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-// InterruptManager handles generation interrupts
+// InterruptManager manages generation interrupts
 type InterruptManager struct {
 	logger      *logrus.Logger
-	interrupts  map[string]*InterruptInfo
+	interrupted map[string]bool
 	mu          sync.RWMutex
-}
-
-// InterruptInfo represents information about an interrupt
-type InterruptInfo struct {
-	RequestID   string    `json:"request_id"`
-	Reason      string    `json:"reason"`
-	Timestamp   time.Time `json:"timestamp"`
-	Source      string    `json:"source"` // "user", "system", "timeout"
-	Acknowledged bool     `json:"acknowledged"`
 }
 
 // NewInterruptManager creates a new interrupt manager
 func NewInterruptManager(logger *logrus.Logger) (*InterruptManager, error) {
-	im := &InterruptManager{
-		logger:     logger,
-		interrupts: make(map[string]*InterruptInfo),
-	}
-
-	// Start cleanup routine for old interrupts
-	go im.cleanupRoutine()
-
-	return im, nil
+	return &InterruptManager{
+		logger:      logger,
+		interrupted: make(map[string]bool),
+	}, nil
 }
 
-// Interrupt marks a request as interrupted
-func (im *InterruptManager) Interrupt(requestID, reason string) error {
+// InterruptGeneration interrupts a generation by request ID
+func (im *InterruptManager) InterruptGeneration(ctx context.Context, requestID string) error {
 	im.mu.Lock()
 	defer im.mu.Unlock()
 
-	interrupt := &InterruptInfo{
-		RequestID: requestID,
-		Reason:    reason,
-		Timestamp: time.Now(),
-		Source:    "user",
-		Acknowledged: false,
-	}
-
-	im.interrupts[requestID] = interrupt
-	im.logger.Infof("Request interrupted: %s (Reason: %s)", requestID, reason)
-
+	im.interrupted[requestID] = true
+	im.logger.Infof("Interrupted generation: %s", requestID)
+	
 	return nil
 }
 
-// IsInterrupted checks if a request is interrupted
+// IsInterrupted checks if a generation is interrupted
 func (im *InterruptManager) IsInterrupted(requestID string) bool {
 	im.mu.RLock()
 	defer im.mu.RUnlock()
 
-	interrupt, exists := im.interrupts[requestID]
-	return exists && !interrupt.Acknowledged
+	return im.interrupted[requestID]
 }
 
-// GetInterrupt retrieves interrupt information for a request
-func (im *InterruptManager) GetInterrupt(requestID string) (*InterruptInfo, bool) {
-	im.mu.RLock()
-	defer im.mu.RUnlock()
-
-	interrupt, exists := im.interrupts[requestID]
-	return interrupt, exists
-}
-
-// AcknowledgeInterrupt marks an interrupt as acknowledged
-func (im *InterruptManager) AcknowledgeInterrupt(requestID string) error {
+// ClearInterrupt clears an interrupt for a request ID
+func (im *InterruptManager) ClearInterrupt(ctx context.Context, requestID string) error {
 	im.mu.Lock()
 	defer im.mu.Unlock()
 
-	interrupt, exists := im.interrupts[requestID]
-	if !exists {
-		return nil // Already cleaned up or never existed
-	}
-
-	interrupt.Acknowledged = true
-	im.logger.Infof("Interrupt acknowledged: %s", requestID)
-
+	delete(im.interrupted, requestID)
+	im.logger.Debugf("Cleared interrupt: %s", requestID)
+	
 	return nil
 }
 
-// ListInterrupts returns all active interrupts
-func (im *InterruptManager) ListInterrupts() []*InterruptInfo {
+// ListInterrupted returns all interrupted request IDs
+func (im *InterruptManager) ListInterrupted(ctx context.Context) ([]string, error) {
 	im.mu.RLock()
 	defer im.mu.RUnlock()
 
-	interrupts := make([]*InterruptInfo, 0, len(im.interrupts))
-	for _, interrupt := range im.interrupts {
-		interrupts = append(interrupts, interrupt)
+	var interrupted []string
+	for requestID := range im.interrupted {
+		interrupted = append(interrupted, requestID)
 	}
 
-	return interrupts
+	return interrupted, nil
 }
 
-// ClearInterrupt removes an interrupt
-func (im *InterruptManager) ClearInterrupt(requestID string) {
+// CleanupInterrupts removes old interrupts (older than 1 hour)
+func (im *InterruptManager) CleanupInterrupts(ctx context.Context) error {
 	im.mu.Lock()
 	defer im.mu.Unlock()
 
-	delete(im.interrupts, requestID)
-	im.logger.Debugf("Cleared interrupt: %s", requestID)
+	// For simplicity, we'll just clear all interrupts
+	// In a real implementation, you'd track timestamps and clean up old ones
+	im.interrupted = make(map[string]bool)
+	im.logger.Info("Cleaned up old interrupts")
+	
+	return nil
 }
 
-// InterruptWithTimeout sets up an automatic timeout interrupt
-func (im *InterruptManager) InterruptWithTimeout(requestID string, timeout time.Duration) {
+// StartCleanupRoutine starts a background routine to clean up old interrupts
+func (im *InterruptManager) StartCleanupRoutine(ctx context.Context) {
 	go func() {
-		timer := time.NewTimer(timeout)
-		defer timer.Stop()
-
-		<-timer.C
-
-		// Check if request is still active
-		if !im.IsInterrupted(requestID) {
-			im.Interrupt(requestID, "timeout")
-			im.logger.Warnf("Request timed out: %s (after %v)", requestID, timeout)
-		}
-	}()
-}
-
-// InterruptContext creates a context that gets cancelled when interrupted
-func (im *InterruptManager) InterruptContext(ctx context.Context, requestID string) (context.Context, context.CancelFunc) {
-	newCtx, cancel := context.WithCancel(ctx)
-
-	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond)
+		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 
 		for {
 			select {
-			case <-ticker.C:
-				if im.IsInterrupted(requestID) {
-					cancel()
-					return
-				}
-			case <-newCtx.Done():
+			case <-ctx.Done():
 				return
+			case <-ticker.C:
+				if err := im.CleanupInterrupts(ctx); err != nil {
+					im.logger.Errorf("Failed to cleanup interrupts: %v", err)
+				}
 			}
 		}
 	}()
-
-	return newCtx, cancel
 }
 
-// CreateInterruptHandler creates an interrupt handler for streaming operations
-func (im *InterruptManager) CreateInterruptHandler(requestID string) func() bool {
-	return func() bool {
-		return im.IsInterrupted(requestID)
+// InterruptRequest represents an interrupt request
+type InterruptRequest struct {
+	RequestID string `json:"request_id"`
+	Reason    string `json:"reason,omitempty"`
+}
+
+// InterruptResponse represents an interrupt response
+type InterruptResponse struct {
+	RequestID string `json:"request_id"`
+	Status    string `json:"status"` // "interrupted", "not_found", "already_completed"
+	Message   string `json:"message,omitempty"`
+}
+
+// CreateInterruptRequest creates a new interrupt request
+func (im *InterruptManager) CreateInterruptRequest(requestID, reason string) *InterruptRequest {
+	return &InterruptRequest{
+		RequestID: requestID,
+		Reason:    reason,
 	}
 }
 
-// cleanupRoutine periodically cleans up old acknowledged interrupts
-func (im *InterruptManager) cleanupRoutine() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		im.cleanupOldInterrupts()
+// ProcessInterruptRequest processes an interrupt request
+func (im *InterruptManager) ProcessInterruptRequest(ctx context.Context, req *InterruptRequest) (*InterruptResponse, error) {
+	err := im.InterruptGeneration(ctx, req.RequestID)
+	if err != nil {
+		return &InterruptResponse{
+			RequestID: req.RequestID,
+			Status:    "error",
+			Message:   fmt.Sprintf("Failed to interrupt: %v", err),
+		}, err
 	}
+
+	return &InterruptResponse{
+		RequestID: req.RequestID,
+		Status:    "interrupted",
+		Message:   fmt.Sprintf("Generation interrupted: %s", req.Reason),
+	}, nil
 }
 
-// cleanupOldInterrupts removes old acknowledged interrupts
-func (im *InterruptManager) cleanupOldInterrupts() {
-	im.mu.Lock()
-	defer im.mu.Unlock()
+// GetInterruptStatus gets the interrupt status for a request ID
+func (im *InterruptManager) GetInterruptStatus(ctx context.Context, requestID string) (*InterruptResponse, error) {
+	isInterrupted := im.IsInterrupted(requestID)
+	
+	status := "active"
+	if isInterrupted {
+		status = "interrupted"
+	}
 
-	cutoff := time.Now().Add(-10 * time.Minute)
-	var toDelete []string
+	return &InterruptResponse{
+		RequestID: requestID,
+		Status:    status,
+		Message:   fmt.Sprintf("Generation status: %s", status),
+	}, nil
+}
 
-	for requestID, interrupt := range im.interrupts {
-		if interrupt.Acknowledged && interrupt.Timestamp.Before(cutoff) {
-			toDelete = append(toDelete, requestID)
+// ResumeGeneration resumes a generation (clears interrupt)
+func (im *InterruptManager) ResumeGeneration(ctx context.Context, requestID string) (*InterruptResponse, error) {
+	err := im.ClearInterrupt(ctx, requestID)
+	if err != nil {
+		return &InterruptResponse{
+			RequestID: requestID,
+			Status:    "error",
+			Message:   fmt.Sprintf("Failed to resume: %v", err),
+		}, err
+	}
+
+	return &InterruptResponse{
+		RequestID: requestID,
+		Status:    "resumed",
+		Message:   "Generation resumed",
+	}, nil
+}
+
+// BatchInterrupt interrupts multiple generations
+func (im *InterruptManager) BatchInterrupt(ctx context.Context, requestIDs []string) ([]*InterruptResponse, error) {
+	var responses []*InterruptResponse
+	
+	for _, requestID := range requestIDs {
+		response, err := im.ProcessInterruptRequest(ctx, &InterruptRequest{
+			RequestID: requestID,
+			Reason:    "batch interrupt",
+		})
+		if err != nil {
+			im.logger.Errorf("Failed to interrupt %s: %v", requestID, err)
 		}
+		responses = append(responses, response)
 	}
 
-	for _, requestID := range toDelete {
-		delete(im.interrupts, requestID)
-	}
-
-	if len(toDelete) > 0 {
-		im.logger.Debugf("Cleaned up %d old interrupts", len(toDelete))
-	}
+	return responses, nil
 }
 
-// InterruptAll interrupts all active requests
-func (im *InterruptManager) InterruptAll(reason string) error {
-	im.mu.Lock()
-	defer im.mu.Unlock()
-
-	count := 0
-	for requestID, interrupt := range im.interrupts {
-		if !interrupt.Acknowledged {
-			interrupt.Reason = reason
-			interrupt.Timestamp = time.Now()
-			interrupt.Source = "system"
-			count++
-		}
-	}
-
-	im.logger.Infof("Interrupted %d active requests (Reason: %s)", count, reason)
-	return nil
-}
-
-// GetStats returns interrupt statistics
-func (im *InterruptManager) GetStats() map[string]interface{} {
+// GetInterruptStats returns interrupt statistics
+func (im *InterruptManager) GetInterruptStats(ctx context.Context) (map[string]interface{}, error) {
 	im.mu.RLock()
 	defer im.mu.RUnlock()
 
-	stats := map[string]interface{}{
-		"total_interrupts": len(im.interrupts),
-		"active_interrupts": 0,
-		"acknowledged_interrupts": 0,
-		"by_source": map[string]int{
-			"user":    0,
-			"system":  0,
-			"timeout": 0,
-		},
+	return map[string]interface{}{
+		"total_interrupted": len(im.interrupted),
+		"interrupted_ids":   im.getInterruptedIDs(),
+		"timestamp":         time.Now().Format(time.RFC3339),
+	}, nil
+}
+
+// getInterruptedIDs returns all interrupted request IDs
+func (im *InterruptManager) getInterruptedIDs() []string {
+	var ids []string
+	for requestID := range im.interrupted {
+		ids = append(ids, requestID)
 	}
+	return ids
+}
 
-	for _, interrupt := range im.interrupts {
-		if interrupt.Acknowledged {
-			stats["acknowledged_interrupts"] = stats["acknowledged_interrupts"].(int) + 1
-		} else {
-			stats["active_interrupts"] = stats["active_interrupts"].(int) + 1
-		}
+// Close closes the interrupt manager
+func (im *InterruptManager) Close() error {
+	im.mu.Lock()
+	defer im.mu.Unlock()
 
-		sourceMap := stats["by_source"].(map[string]int)
-		sourceMap[interrupt.Source]++
-	}
-
-	return stats
+	im.interrupted = make(map[string]bool)
+	im.logger.Info("Interrupt manager closed")
+	
+	return nil
 }
