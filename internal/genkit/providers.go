@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/sashabaranov/go-openai"
+	"github.com/sirupsen/logrus"
 )
 
 // GoogleAIProvider implements Google AI provider
@@ -27,10 +27,10 @@ func NewGoogleAIProvider(apiKey string, logger *logrus.Logger) (*GoogleAIProvide
 func (p *GoogleAIProvider) GenerateContent(ctx context.Context, req *GenerateContentRequest) (*GenerateContentResponse, error) {
 	// Implementation for Google AI API
 	// This is a simplified implementation - replace with actual Google AI SDK calls
-	
+
 	response := &GenerateContentResponse{
-		Content: fmt.Sprintf("Generated content from Google AI for prompt: %s", req.Prompt),
-		Model:   req.Model,
+		Content:   fmt.Sprintf("Generated content from Google AI for prompt: %s", req.Prompt),
+		Model:     req.Model,
 		RequestID: req.RequestID,
 		Usage: &UsageInfo{
 			PromptTokens:     len(strings.Split(req.Prompt, " ")),
@@ -38,21 +38,21 @@ func (p *GoogleAIProvider) GenerateContent(ctx context.Context, req *GenerateCon
 			TotalTokens:      len(strings.Split(req.Prompt, " ")) + 100,
 		},
 	}
-	
+
 	p.logger.Debugf("Generated content with Google AI model: %s", req.Model)
 	return response, nil
 }
 
 func (p *GoogleAIProvider) GenerateContentStream(ctx context.Context, req *GenerateContentRequest) (<-chan *GenerateContentChunk, error) {
 	ch := make(chan *GenerateContentChunk)
-	
+
 	go func() {
 		defer close(ch)
-		
+
 		// Simulate streaming response
 		content := fmt.Sprintf("Streaming content from Google AI for prompt: %s", req.Prompt)
 		words := strings.Split(content, " ")
-		
+
 		for i, word := range words {
 			select {
 			case <-ctx.Done():
@@ -67,7 +67,7 @@ func (p *GoogleAIProvider) GenerateContentStream(ctx context.Context, req *Gener
 			}
 		}
 	}()
-	
+
 	return ch, nil
 }
 
@@ -100,7 +100,7 @@ type OpenAIProvider struct {
 // NewOpenAIProvider creates a new OpenAI provider
 func NewOpenAIProvider(apiKey string, logger *logrus.Logger) (*OpenAIProvider, error) {
 	client := openai.NewClient(apiKey)
-	
+
 	return &OpenAIProvider{
 		client: client,
 		logger: logger,
@@ -117,7 +117,7 @@ func (p *OpenAIProvider) GenerateContent(ctx context.Context, req *GenerateConte
 			},
 		},
 	}
-	
+
 	// Add tools if provided
 	if len(req.Tools) > 0 {
 		var tools []openai.Tool
@@ -133,12 +133,12 @@ func (p *OpenAIProvider) GenerateContent(ctx context.Context, req *GenerateConte
 		}
 		chatReq.Tools = tools
 	}
-	
+
 	resp, err := p.client.CreateChatCompletion(ctx, chatReq)
 	if err != nil {
 		return nil, fmt.Errorf("OpenAI API error: %w", err)
 	}
-	
+
 	response := &GenerateContentResponse{
 		Content:   resp.Choices[0].Message.Content,
 		Model:     req.Model,
@@ -149,13 +149,13 @@ func (p *OpenAIProvider) GenerateContent(ctx context.Context, req *GenerateConte
 			TotalTokens:      resp.Usage.TotalTokens,
 		},
 	}
-	
+
 	// Handle tool calls
 	if len(resp.Choices[0].Message.ToolCalls) > 0 {
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 			var args map[string]interface{}
 			json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
-			
+
 			response.ToolCalls = append(response.ToolCalls, struct {
 				ID        string                 `json:"id"`
 				Name      string                 `json:"name"`
@@ -167,7 +167,7 @@ func (p *OpenAIProvider) GenerateContent(ctx context.Context, req *GenerateConte
 			})
 		}
 	}
-	
+
 	p.logger.Debugf("Generated content with OpenAI model: %s", req.Model)
 	return response, nil
 }
@@ -183,44 +183,44 @@ func (p *OpenAIProvider) GenerateContentStream(ctx context.Context, req *Generat
 		},
 		Stream: true,
 	}
-	
+
 	stream, err := p.client.CreateChatCompletionStream(ctx, chatReq)
 	if err != nil {
 		return nil, fmt.Errorf("OpenAI stream error: %w", err)
 	}
-	
+
 	ch := make(chan *GenerateContentChunk)
-	
+
 	go func() {
 		defer close(ch)
 		defer stream.Close()
-		
+
 		for {
 			response, err := stream.Recv()
 			if err != nil {
 				return
 			}
-			
+
 			if len(response.Choices) > 0 {
 				chunk := &GenerateContentChunk{
 					Content:   response.Choices[0].Delta.Content,
 					Done:      response.Choices[0].FinishReason != "",
 					RequestID: req.RequestID,
 				}
-				
+
 				select {
 				case ch <- chunk:
 				case <-ctx.Done():
 					return
 				}
-				
+
 				if chunk.Done {
 					return
 				}
 			}
 		}
 	}()
-	
+
 	return ch, nil
 }
 
@@ -229,18 +229,23 @@ func (p *OpenAIProvider) EmbedText(ctx context.Context, text string) ([]float64,
 		Model: openai.AdaEmbeddingV2,
 		Input: []string{text},
 	}
-	
+
 	resp, err := p.client.CreateEmbeddings(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("OpenAI embedding error: %w", err)
 	}
-	
+
 	if len(resp.Data) == 0 {
 		return nil, fmt.Errorf("no embeddings returned")
 	}
-	
+
 	p.logger.Debugf("Generated embeddings with OpenAI for text length: %d", len(text))
-	return resp.Data[0].Embedding, nil
+	// Convert []float32 to []float64
+	embedding := make([]float64, len(resp.Data[0].Embedding))
+	for i, v := range resp.Data[0].Embedding {
+		embedding[i] = float64(v)
+	}
+	return embedding, nil
 }
 
 func (p *OpenAIProvider) ListModels(ctx context.Context) ([]string, error) {
@@ -269,10 +274,10 @@ func NewAnthropicProvider(apiKey string, logger *logrus.Logger) (*AnthropicProvi
 func (p *AnthropicProvider) GenerateContent(ctx context.Context, req *GenerateContentRequest) (*GenerateContentResponse, error) {
 	// Implementation for Anthropic API
 	// This is a simplified implementation - replace with actual Anthropic SDK calls
-	
+
 	response := &GenerateContentResponse{
-		Content: fmt.Sprintf("Generated content from Anthropic for prompt: %s", req.Prompt),
-		Model:   req.Model,
+		Content:   fmt.Sprintf("Generated content from Anthropic for prompt: %s", req.Prompt),
+		Model:     req.Model,
 		RequestID: req.RequestID,
 		Usage: &UsageInfo{
 			PromptTokens:     len(strings.Split(req.Prompt, " ")),
@@ -280,20 +285,20 @@ func (p *AnthropicProvider) GenerateContent(ctx context.Context, req *GenerateCo
 			TotalTokens:      len(strings.Split(req.Prompt, " ")) + 100,
 		},
 	}
-	
+
 	p.logger.Debugf("Generated content with Anthropic model: %s", req.Model)
 	return response, nil
 }
 
 func (p *AnthropicProvider) GenerateContentStream(ctx context.Context, req *GenerateContentRequest) (<-chan *GenerateContentChunk, error) {
 	ch := make(chan *GenerateContentChunk)
-	
+
 	go func() {
 		defer close(ch)
-		
+
 		content := fmt.Sprintf("Streaming content from Anthropic for prompt: %s", req.Prompt)
 		words := strings.Split(content, " ")
-		
+
 		for i, word := range words {
 			select {
 			case <-ctx.Done():
@@ -308,7 +313,7 @@ func (p *AnthropicProvider) GenerateContentStream(ctx context.Context, req *Gene
 			}
 		}
 	}()
-	
+
 	return ch, nil
 }
 
@@ -343,8 +348,8 @@ func NewVertexAIProvider(projectID string, logger *logrus.Logger) (*VertexAIProv
 func (p *VertexAIProvider) GenerateContent(ctx context.Context, req *GenerateContentRequest) (*GenerateContentResponse, error) {
 	// Implementation for Vertex AI
 	response := &GenerateContentResponse{
-		Content: fmt.Sprintf("Generated content from Vertex AI for prompt: %s", req.Prompt),
-		Model:   req.Model,
+		Content:   fmt.Sprintf("Generated content from Vertex AI for prompt: %s", req.Prompt),
+		Model:     req.Model,
 		RequestID: req.RequestID,
 		Usage: &UsageInfo{
 			PromptTokens:     len(strings.Split(req.Prompt, " ")),
@@ -352,20 +357,20 @@ func (p *VertexAIProvider) GenerateContent(ctx context.Context, req *GenerateCon
 			TotalTokens:      len(strings.Split(req.Prompt, " ")) + 100,
 		},
 	}
-	
+
 	p.logger.Debugf("Generated content with Vertex AI model: %s", req.Model)
 	return response, nil
 }
 
 func (p *VertexAIProvider) GenerateContentStream(ctx context.Context, req *GenerateContentRequest) (<-chan *GenerateContentChunk, error) {
 	ch := make(chan *GenerateContentChunk)
-	
+
 	go func() {
 		defer close(ch)
-		
+
 		content := fmt.Sprintf("Streaming content from Vertex AI for prompt: %s", req.Prompt)
 		words := strings.Split(content, " ")
-		
+
 		for i, word := range words {
 			select {
 			case <-ctx.Done():
@@ -380,7 +385,7 @@ func (p *VertexAIProvider) GenerateContentStream(ctx context.Context, req *Gener
 			}
 		}
 	}()
-	
+
 	return ch, nil
 }
 
@@ -420,8 +425,8 @@ func NewOllamaProvider(host string, logger *logrus.Logger) (*OllamaProvider, err
 func (p *OllamaProvider) GenerateContent(ctx context.Context, req *GenerateContentRequest) (*GenerateContentResponse, error) {
 	// Implementation for Ollama API
 	response := &GenerateContentResponse{
-		Content: fmt.Sprintf("Generated content from Ollama for prompt: %s", req.Prompt),
-		Model:   req.Model,
+		Content:   fmt.Sprintf("Generated content from Ollama for prompt: %s", req.Prompt),
+		Model:     req.Model,
 		RequestID: req.RequestID,
 		Usage: &UsageInfo{
 			PromptTokens:     len(strings.Split(req.Prompt, " ")),
@@ -429,20 +434,20 @@ func (p *OllamaProvider) GenerateContent(ctx context.Context, req *GenerateConte
 			TotalTokens:      len(strings.Split(req.Prompt, " ")) + 100,
 		},
 	}
-	
+
 	p.logger.Debugf("Generated content with Ollama model: %s", req.Model)
 	return response, nil
 }
 
 func (p *OllamaProvider) GenerateContentStream(ctx context.Context, req *GenerateContentRequest) (<-chan *GenerateContentChunk, error) {
 	ch := make(chan *GenerateContentChunk)
-	
+
 	go func() {
 		defer close(ch)
-		
+
 		content := fmt.Sprintf("Streaming content from Ollama for prompt: %s", req.Prompt)
 		words := strings.Split(content, " ")
-		
+
 		for i, word := range words {
 			select {
 			case <-ctx.Done():
@@ -457,7 +462,7 @@ func (p *OllamaProvider) GenerateContentStream(ctx context.Context, req *Generat
 			}
 		}
 	}()
-	
+
 	return ch, nil
 }
 

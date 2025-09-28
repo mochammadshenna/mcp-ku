@@ -10,10 +10,10 @@ import (
 
 // FlowManager manages Genkit flows
 type FlowManager struct {
-	service   *Service
-	logger    *logrus.Logger
-	flows     map[string]*FlowDefinition
-	mu        sync.RWMutex
+	service *Service
+	logger  *logrus.Logger
+	flows   map[string]*FlowDefinition
+	mu      sync.RWMutex
 }
 
 // NewFlowManager creates a new flow manager
@@ -41,7 +41,7 @@ func (fm *FlowManager) CreateFlow(ctx context.Context, flow *FlowDefinition) err
 
 	fm.flows[flow.ID] = flow
 	fm.logger.Infof("Created flow: %s (%s)", flow.Name, flow.ID)
-	
+
 	return nil
 }
 
@@ -74,7 +74,7 @@ func (fm *FlowManager) UpdateFlow(ctx context.Context, flow *FlowDefinition) err
 
 	fm.flows[flow.ID] = flow
 	fm.logger.Infof("Updated flow: %s (%s)", flow.Name, flow.ID)
-	
+
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (fm *FlowManager) DeleteFlow(ctx context.Context, flowID string) error {
 
 	delete(fm.flows, flowID)
 	fm.logger.Infof("Deleted flow: %s", flowID)
-	
+
 	return nil
 }
 
@@ -124,13 +124,13 @@ func (fm *FlowManager) ExecuteFlow(ctx context.Context, req *FlowExecutionReques
 	// Execute flow steps
 	output := make(map[string]interface{})
 	metadata := make(map[string]interface{})
-	
+
 	for _, step := range flow.Steps {
 		stepResult, err := fm.executeStep(ctx, step, req.Input, output, req.RequestID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute step %s: %w", step.ID, err)
 		}
-		
+
 		output[step.ID] = stepResult
 		metadata[step.ID+"_executed_at"] = "2024-01-01T12:00:00Z"
 	}
@@ -373,10 +373,10 @@ func (fm *FlowManager) CreateExampleFlows(ctx context.Context) error {
 				},
 			},
 			{
-				ID:          "generate",
-				Type:        "generate",
-				Name:        "Generate Answer",
-				Description: "Generate answer based on retrieved documents",
+				ID:           "generate",
+				Type:         "generate",
+				Name:         "Generate Answer",
+				Description:  "Generate answer based on retrieved documents",
 				Dependencies: []string{"search"},
 				Config: map[string]interface{}{
 					"prompt": "Based on the following context, answer the question: {{.query}}\n\nContext: {{.search}}",

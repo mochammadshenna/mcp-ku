@@ -41,7 +41,7 @@ func (tm *ToolManager) RegisterTool(ctx context.Context, tool *Tool) error {
 
 	tm.tools[tool.Name] = tool
 	tm.logger.Infof("Registered tool: %s", tool.Name)
-	
+
 	return nil
 }
 
@@ -92,11 +92,11 @@ func (tm *ToolManager) CallTool(ctx context.Context, req *ToolCallRequest) (*Too
 	result, err := tm.executeTool(ctx, tool, req.Arguments)
 	if err != nil {
 		return &ToolCallResponse{
-			ToolName:   req.ToolName,
-			Result:     nil,
-			RequestID:  req.RequestID,
-			Status:     "error",
-			Error:      err.Error(),
+			ToolName:  req.ToolName,
+			Result:    nil,
+			RequestID: req.RequestID,
+			Status:    "error",
+			Error:     err.Error(),
 		}, nil
 	}
 

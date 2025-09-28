@@ -25,12 +25,12 @@ type MCPClient struct {
 
 // GenerateRequest represents a content generation request
 type GenerateRequest struct {
-	Model       string                 `json:"model"`
-	Prompt      string                 `json:"prompt"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
-	Tools       []types.Tool           `json:"tools,omitempty"`
-	Stream      bool                   `json:"stream,omitempty"`
-	RequestID   string                 `json:"request_id,omitempty"`
+	Model      string                 `json:"model"`
+	Prompt     string                 `json:"prompt"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	Tools      []types.Tool           `json:"tools,omitempty"`
+	Stream     bool                   `json:"stream,omitempty"`
+	RequestID  string                 `json:"request_id,omitempty"`
 }
 
 // GenerateResponse represents a content generation response
@@ -119,13 +119,17 @@ func (c *MCPClient) Connect(ctx context.Context) error {
 
 // GenerateContent generates content using the MCP server
 func (c *MCPClient) GenerateContent(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
-	return c.makeRequest(ctx, "POST", "/content/generate", req, &GenerateResponse{})
+	result, err := c.makeRequest(ctx, "POST", "/content/generate", req, &GenerateResponse{})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GenerateResponse), nil
 }
 
 // GenerateContentStream generates content with streaming
 func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequest) (<-chan *StreamChunk, error) {
 	req.Stream = true
-	
+
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -171,7 +175,7 @@ func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequ
 				}
 
 				ch <- &chunk
-				
+
 				if chunk.Done {
 					return
 				}
@@ -184,12 +188,20 @@ func (c *MCPClient) GenerateContentStream(ctx context.Context, req *GenerateRequ
 
 // ExecuteFlow executes a flow on the MCP server
 func (c *MCPClient) ExecuteFlow(ctx context.Context, req *FlowRequest) (*FlowResponse, error) {
-	return c.makeRequest(ctx, "POST", "/flows/"+req.FlowID+"/execute", req, &FlowResponse{})
+	result, err := c.makeRequest(ctx, "POST", "/flows/"+req.FlowID+"/execute", req, &FlowResponse{})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*FlowResponse), nil
 }
 
 // CallTool calls a tool on the MCP server
 func (c *MCPClient) CallTool(ctx context.Context, toolCall *types.ToolCall) (*types.ToolResult, error) {
-	return c.makeRequest(ctx, "POST", "/tools/call", toolCall, &types.ToolResult{})
+	result, err := c.makeRequest(ctx, "POST", "/tools/call", toolCall, &types.ToolResult{})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*types.ToolResult), nil
 }
 
 // ListServers lists all registered MCP servers
@@ -288,7 +300,7 @@ func (c *MCPClient) Close() error {
 }
 
 // makeRequest is a helper method for making HTTP requests
-func (c *MCPClient) makeRequest(ctx context.Context, method, path string, reqBody interface{}, respBody interface{}) (*http.Response, error) {
+func (c *MCPClient) makeRequest(ctx context.Context, method, path string, reqBody interface{}, respBody interface{}) (interface{}, error) {
 	var body io.Reader
 	if reqBody != nil {
 		jsonBody, err := json.Marshal(reqBody)
@@ -309,7 +321,7 @@ func (c *MCPClient) makeRequest(ctx context.Context, method, path string, reqBod
 	req.Header.Set("Authorization", "Bearer "+c.config.Security.SecretKey)
 
 	c.logger.Debugf("Making %s request to %s", method, path)
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
@@ -318,14 +330,14 @@ func (c *MCPClient) makeRequest(ctx context.Context, method, path string, reqBod
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return resp, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	if respBody != nil {
 		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
-			return resp, fmt.Errorf("failed to decode response: %w", err)
+			return nil, fmt.Errorf("failed to decode response: %w", err)
 		}
+		return respBody, nil
 	}
-
-	return resp, nil
+	return nil, nil
 }

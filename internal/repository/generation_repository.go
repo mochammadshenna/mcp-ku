@@ -178,7 +178,7 @@ func (r *generationRepository) ListGenerations(filter GenerationFilter) ([]*type
 		SELECT id, model, prompt, response, parameters, metadata, status, request_id, created_at, completed_at
 		FROM generations
 		WHERE 1=1`
-	
+
 	args := []interface{}{}
 	argIndex := 1
 

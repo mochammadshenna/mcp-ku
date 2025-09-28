@@ -13,18 +13,18 @@ import (
 type Service struct {
 	config *config.Config
 	logger *logrus.Logger
-	
+
 	// AI providers
-	googleAI   *GoogleAIProvider
-	openAI     *OpenAIProvider
-	anthropic  *AnthropicProvider
-	vertexAI   *VertexAIProvider
-	ollama     *OllamaProvider
-	
+	googleAI  *GoogleAIProvider
+	openAI    *OpenAIProvider
+	anthropic *AnthropicProvider
+	vertexAI  *VertexAIProvider
+	ollama    *OllamaProvider
+
 	// Genkit components
-	flowManager    *FlowManager
-	promptManager  *PromptManager
-	toolManager    *ToolManager
+	flowManager      *FlowManager
+	promptManager    *PromptManager
+	toolManager      *ToolManager
 	interruptManager *InterruptManager
 }
 
@@ -222,8 +222,8 @@ func (s *Service) isVertexAIModel(model string) bool {
 
 func (s *Service) isOllamaModel(model string) bool {
 	// Ollama can run any model, so we'll assume any model not matching others is Ollama
-	return !s.isGoogleAIModel(model) && !s.isOpenAIModel(model) && 
-		   !s.isAnthropicModel(model) && !s.isVertexAIModel(model)
+	return !s.isGoogleAIModel(model) && !s.isOpenAIModel(model) &&
+		!s.isAnthropicModel(model) && !s.isVertexAIModel(model)
 }
 
 // GetFlowManager returns the flow manager

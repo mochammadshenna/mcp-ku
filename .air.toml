@@ -1,4 +1,3 @@
-# Config file for Air development tool
 root = "."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
@@ -6,9 +5,9 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/server"
+  cmd = "go build -o ./tmp/main cmd/server/main.go"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "build", "docs"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "bin", "logs", "docs", "migrations", "monitoring", "tests"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false

@@ -1,431 +1,475 @@
 # MCP Octo Enigma
 
-A sophisticated Model Context Protocol (MCP) server and client implementation built with Go 1.24, featuring advanced Genkit integration, multiple AI provider support, and comprehensive RAG capabilities with PostgreSQL and pgvector.
+[![Go Version](https://img.shields.io/badge/Go-1.24-blue.svg)](https://golang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](docker-compose.yml)
+
+**Advanced MCP (Model Context Protocol) Server with Genkit Integration**
+
+MCP Octo Enigma is a sophisticated MCP server implementation built with Go 1.24, featuring advanced Genkit integration, multiple AI providers, vector search with pgvector, and comprehensive observability.
 
 ## 🚀 Features
 
-### Core MCP Implementation
-- **Full MCP Protocol Support**: Complete implementation of the Model Context Protocol specification
-- **Multi-Server Management**: Manage and route requests across multiple MCP servers
-- **Real-time Communication**: WebSocket and HTTP-based server communication
-- **Health Monitoring**: Automatic health checking and failover for MCP servers
+### Core MCP Features
+- **Full MCP Protocol Implementation** - Complete server and client implementation
+- **Multi-Server Management** - Register, manage, and monitor multiple MCP servers
+- **Streaming Support** - Real-time content generation with Server-Sent Events
+- **Interrupt Handling** - Pause and resume generation processes
 
-### Advanced Genkit Integration
-- **Content Generation**: Support for multiple AI providers (OpenAI, Google AI, Anthropic, Vertex AI, Ollama)
-- **Flow Management**: Create and execute complex AI workflows with dependency management
-- **Prompt Management**: dotprompt template system with variable substitution and versioning
-- **Tool Calling**: Extensible tool system with built-in and custom tools
-- **Interrupt Handling**: Pause and resume generation processes with graceful interruption
+### AI Integration
+- **Multiple AI Providers** - OpenAI, Google AI, Anthropic, Vertex AI, Ollama
+- **Advanced Genkit Integration** - Content generation, flows, prompts, and tools
+- **Vector Search & RAG** - PostgreSQL with pgvector for retrieval-augmented generation
+- **Tool Calling** - Extensible tool system with built-in tools
 
-### Vector Database & RAG
-- **pgvector Integration**: High-performance vector similarity search
-- **Document Indexing**: Automatic embedding generation and storage
-- **RAG Workflows**: Retrieval-augmented generation with context injection
-- **Semantic Search**: Advanced similarity search with configurable thresholds
+### Advanced Features
+- **Flow Management** - Complex workflow orchestration with dependencies
+- **Prompt Management** - dotprompt integration with template rendering
+- **Evaluation Framework** - Quality, safety, and performance evaluation
+- **Observability** - Metrics, tracing, and logging with Prometheus, Grafana, and Jaeger
 
-### Observability & Evaluation
-- **Comprehensive Metrics**: Request tracing, performance monitoring, and usage analytics
-- **Structured Logging**: JSON-based logging with correlation IDs
-- **Evaluation Framework**: Automated quality assessment for generated content
-- **Health Checks**: System health monitoring and alerting
+### Development & Production
+- **Hot Reloading** - Air for development with instant code reloading
+- **Docker Support** - Complete containerization with Docker Compose
+- **Comprehensive Testing** - Unit, integration, and E2E tests
+- **Security** - Rate limiting, authentication, and input validation
 
-## 🏗️ Architecture
+## 📋 Prerequisites
 
-The system follows a layered architecture pattern:
+- **Go 1.24+** - [Install Go](https://golang.org/doc/install)
+- **Docker & Docker Compose** - [Install Docker](https://docs.docker.com/get-docker/)
+- **PostgreSQL 16+** - For local development (or use Docker)
+- **Redis** - For caching (or use Docker)
+- **Make** - For build automation
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Presentation Layer                       │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │ Gin Server  │ │ Middleware  │ │     HTTP Handlers       │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────┐
-│                     Service Layer                          │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │   Content   │ │    Flow     │ │    Tool & Evaluation    │ │
-│  │   Service   │ │   Service   │ │       Services          │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────┐
-│                      Core Layer                            │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │   Genkit    │ │     MCP     │ │    Vector Repository    │ │
-│  │   Service   │ │   Manager   │ │      & Database         │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+### Optional
+- **Ollama** - For local AI models
+- **API Keys** - OpenAI, Google AI, Anthropic for cloud providers
 
-For detailed architecture diagrams, see [docs/diagrams.md](docs/diagrams.md).
+## 🛠️ Quick Start
 
-## 🛠️ Prerequisites
+### 1. Clone and Setup
 
-- **Go 1.24+**
-- **PostgreSQL 15+** with pgvector extension
-- **Redis** (optional, for caching)
-- **Docker & Docker Compose** (for containerized deployment)
-
-### AI Provider API Keys (at least one required)
-- OpenAI API Key
-- Google AI API Key
-- Anthropic API Key
-- Vertex AI Project ID
-- Local Ollama installation
-
-## 📦 Installation
-
-### Option 1: Local Development
-
-1. **Clone the repository**
 ```bash
-git clone https://github.com/your-org/mcp-octo-enigma.git
+git clone <repository-url>
 cd mcp-octo-enigma
+make dev-setup
 ```
 
-2. **Install dependencies**
-```bash
-make deps
-```
+### 2. Configure Environment
 
-3. **Set up environment variables**
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your API keys and configuration
 ```
 
-4. **Start PostgreSQL with pgvector**
-```bash
-make test-db
-```
+### 3. Start with Docker (Recommended)
 
-5. **Run migrations**
-```bash
-make migrate-up
-```
-
-6. **Build and run**
-```bash
-make build
-./build/mcp-server
-```
-
-### Option 2: Docker Deployment
-
-1. **Clone and configure**
-```bash
-git clone https://github.com/your-org/mcp-octo-enigma.git
-cd mcp-octo-enigma
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-2. **Deploy with Docker Compose**
 ```bash
 make docker-up
 ```
 
-## ⚙️ Configuration
+### 4. Or Start Locally
+
+```bash
+# Install dependencies
+make install-tools
+
+# Setup database
+make db-setup
+make migrate-up
+
+# Build and run
+make build
+make run
+```
+
+### 5. Verify Installation
+
+```bash
+# Check health
+make health
+
+# View logs
+make logs
+
+# Check status
+make status
+```
+
+## 🏗️ Development
+
+### Project Structure
+
+```
+mcp-octo-enigma/
+├── cmd/                    # Application binaries
+│   ├── server/            # MCP Server
+│   └── client/            # MCP Client
+├── internal/              # Core application code
+│   ├── config/           # Configuration management
+│   ├── genkit/          # Genkit service integration
+│   ├── mcp/             # MCP protocol implementation
+│   ├── server/          # HTTP server with Gin
+│   ├── handlers/        # API handlers
+│   ├── service/         # Business logic
+│   ├── repository/      # Data access layer
+│   ├── middleware/      # HTTP middleware
+│   ├── client/          # MCP client implementation
+│   ├── cache/           # Caching layer
+│   └── types/           # Shared types
+├── migrations/           # Database migrations
+├── tests/               # Test suites
+├── docs/               # Documentation
+├── monitoring/         # Monitoring configuration
+├── docker-compose.yml  # Container orchestration
+├── Makefile           # Build automation
+└── README.md          # This file
+```
+
+### Development Commands
+
+```bash
+# Development with hot reloading
+make dev
+
+# Run tests
+make test
+
+# Code quality checks
+make check
+
+# Format code
+make format
+
+# Run linter
+make lint
+
+# Generate documentation
+make docs
+
+# Database operations
+make migrate-up
+make migrate-down
+make db-backup
+```
+
+### Testing
+
+```bash
+# Unit tests
+make test-unit
+
+# Integration tests
+make test-integration
+
+# End-to-end tests
+make test-e2e
+
+# Coverage report
+make coverage
+
+# Benchmarks
+make bench
+```
+
+## 🔧 Configuration
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:password@localhost:5432/mcp_octo_enigma?sslmode=disable` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://mcp_user:mcp_password@localhost:5432/mcp_octo_enigma?sslmode=disable` |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
 | `MCP_SERVER_PORT` | Server port | `8080` |
+| `LOG_LEVEL` | Logging level | `info` |
 | `GOOGLE_AI_API_KEY` | Google AI API key | - |
 | `OPENAI_API_KEY` | OpenAI API key | - |
 | `ANTHROPIC_API_KEY` | Anthropic API key | - |
-| `VERTEX_AI_PROJECT_ID` | Vertex AI project ID | - |
-| `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434` |
-| `LOG_LEVEL` | Logging level | `info` |
+| `API_SECRET_KEY` | JWT secret key | - |
 
-### Configuration File
+### AI Providers
 
-Advanced configuration can be managed through the config system. See [internal/config/config.go](internal/config/config.go) for all available options.
-
-## 🔧 Usage
-
-### Starting the Server
+Configure your AI providers by setting the appropriate API keys in `.env`:
 
 ```bash
-# Development mode
-make dev
+# Google AI
+GOOGLE_AI_API_KEY=your-google-ai-api-key
 
-# Production mode
-./build/mcp-server
+# OpenAI
+OPENAI_API_KEY=your-openai-api-key
+
+# Anthropic
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Vertex AI
+VERTEX_AI_PROJECT_ID=your-vertex-project-id
+
+# Ollama (local)
+OLLAMA_HOST=http://localhost:11434
 ```
 
-### Basic API Examples
+## 🚀 API Usage
 
-#### Generate Content
+### Content Generation
+
 ```bash
+# Generate content
 curl -X POST http://localhost:8080/api/v1/content/generate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-token" \
   -d '{
     "model": "gpt-4",
-    "prompt": "Explain quantum computing in simple terms"
+    "prompt": "Tell me a story about a brave knight",
+    "parameters": {
+      "temperature": 0.7,
+      "max_tokens": 1000
+    }
+  }'
+
+# Streaming generation
+curl -X POST http://localhost:8080/api/v1/content/generate/stream \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-token" \
+  -d '{
+    "model": "gpt-4",
+    "prompt": "Tell me a story about a brave knight",
+    "stream": true
   }'
 ```
 
-#### Execute a Flow
+### Flow Execution
+
 ```bash
+# Execute a flow
 curl -X POST http://localhost:8080/api/v1/flows/content-generation/execute \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-token" \
   -d '{
     "input": {
-      "prompt": "Write a blog post about AI",
+      "prompt": "Write a poem about the ocean",
       "model": "gpt-4"
     }
   }'
 ```
 
-#### Call a Tool
-```bash
-curl -X POST http://localhost:8080/api/v1/tools/call \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-token" \
-  -d '{
-    "tool_name": "calculator",
-    "arguments": {
-      "expression": "2 + 2 * 3"
-    }
-  }'
-```
+### Vector Search
 
-#### Vector Search
 ```bash
+# Search similar documents
 curl -X POST http://localhost:8080/api/v1/vectors/search \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-token" \
   -d '{
-    "query": [0.1, 0.2, 0.3, ...],
+    "query": [0.1, 0.2, 0.3],
     "limit": 10,
-    "threshold": 0.8
+    "threshold": 0.7
   }'
 ```
 
-## 🔄 API Documentation
+## 📊 Monitoring
 
-### Core Endpoints
+### Prometheus Metrics
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/v1/content/generate` | Generate content |
-| `POST` | `/api/v1/content/generate/stream` | Stream content generation |
-| `POST` | `/api/v1/content/interrupt` | Interrupt generation |
+Access Prometheus at `http://localhost:9090`
 
-### Flow Management
+### Grafana Dashboards
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/v1/flows/` | List all flows |
-| `POST` | `/api/v1/flows/` | Create new flow |
-| `GET` | `/api/v1/flows/{id}` | Get flow details |
-| `PUT` | `/api/v1/flows/{id}` | Update flow |
-| `DELETE` | `/api/v1/flows/{id}` | Delete flow |
-| `POST` | `/api/v1/flows/{id}/execute` | Execute flow |
+Access Grafana at `http://localhost:3000` (admin/admin)
 
-### Tool Management
+### Jaeger Tracing
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/v1/tools/` | List available tools |
-| `POST` | `/api/v1/tools/call` | Execute tool |
-| `POST` | `/api/v1/tools/register` | Register new tool |
+Access Jaeger at `http://localhost:16686`
 
-### Vector Operations
+### Health Checks
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/vectors/embed` | Generate embeddings |
-| `POST` | `/api/v1/vectors/search` | Vector similarity search |
-| `POST` | `/api/v1/vectors/index` | Index document |
+```bash
+# Application health
+curl http://localhost:8080/health
 
-### MCP Server Management
+# Database health
+make status
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/v1/mcp/servers` | List MCP servers |
-| `POST` | `/api/v1/mcp/servers` | Register MCP server |
-| `DELETE` | `/api/v1/mcp/servers/{id}` | Unregister MCP server |
+## 🐳 Docker Deployment
+
+### Production Deployment
+
+```bash
+# Build production images
+make docker-build
+
+# Deploy with Docker Compose
+make docker-up
+
+# View logs
+make docker-logs
+
+# Scale services
+docker-compose up -d --scale server=3
+```
+
+### Environment-specific Configurations
+
+```bash
+# Development
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+```
 
 ## 🧪 Testing
 
-### Run All Tests
+### Test Structure
+
+```
+tests/
+├── unit/               # Unit tests
+├── integration/        # Integration tests
+├── e2e/               # End-to-end tests
+└── fixtures/          # Test data
+```
+
+### Running Tests
+
 ```bash
+# All tests
 make test
-```
 
-### Unit Tests Only
-```bash
+# Specific test types
 make test-unit
-```
-
-### Integration Tests
-```bash
 make test-integration
+make test-e2e
+
+# With coverage
+make coverage
+
+# Performance tests
+make bench
 ```
 
-### Test Coverage
+## 📚 Documentation
+
+### API Documentation
+
+- **Swagger UI**: `http://localhost:8080/swagger/index.html`
+- **OpenAPI Spec**: `docs/swagger/swagger.json`
+
+### Generated Documentation
+
 ```bash
-make test-coverage
+# Generate Swagger docs
+make swagger
+
+# Serve documentation
+make docs-serve
 ```
-
-### Test with Database
-```bash
-make test-db        # Start test database
-make test          # Run tests
-make test-db-down  # Clean up
-```
-
-## 🚀 Development
-
-### Development Setup
-```bash
-# Install development tools
-make install-tools
-
-# Start development environment
-make dev
-
-# Format code
-make fmt
-
-# Lint code
-make lint
-
-# Run security scan
-make security
-```
-
-### Project Structure
-```
-mcp-octo-enigma/
-├── cmd/                    # Application entry points
-│   ├── server/            # MCP server binary
-│   └── client/            # MCP client binary
-├── internal/              # Private application code
-│   ├── config/           # Configuration management
-│   ├── container/        # Dependency injection
-│   ├── database/         # Database operations
-│   ├── genkit/          # Genkit integration
-│   ├── handlers/        # HTTP handlers
-│   ├── logger/          # Logging utilities
-│   ├── mcp/            # MCP protocol implementation
-│   ├── middleware/     # HTTP middleware
-│   ├── repository/     # Data access layer
-│   ├── server/         # HTTP server setup
-│   ├── service/        # Business logic
-│   └── types/          # Common types
-├── tests/                # Test files
-│   ├── unit/           # Unit tests
-│   └── integration/    # Integration tests
-├── migrations/           # Database migrations
-├── docs/                # Documentation
-└── config/              # Configuration files
-```
-
-### Adding New Features
-
-1. **Add New AI Provider**
-   - Implement the `AIProvider` interface in `internal/genkit/providers.go`
-   - Add provider configuration to `internal/config/config.go`
-   - Update model detection logic in `internal/genkit/service.go`
-
-2. **Create Custom Tools**
-   - Implement `ToolHandlerFunc` in `internal/genkit/tool_manager.go`
-   - Register tool in the tool manager
-   - Add appropriate tests
-
-3. **Extend Flow Types**
-   - Add new step types in `internal/genkit/flow_manager.go`
-   - Implement step execution logic
-   - Update flow templates
-
-## 📊 Monitoring & Observability
-
-### Metrics Endpoints
-- `GET /api/v1/observability/metrics` - System metrics
-- `GET /api/v1/observability/traces` - Distributed traces
-
-### Available Metrics
-- Request count and latency
-- AI provider usage and costs
-- Vector search performance
-- Error rates and types
-- MCP server health status
-
-### Logging
-All logs are structured JSON with the following fields:
-- `timestamp` - ISO 8601 timestamp
-- `level` - Log level (debug, info, warn, error)
-- `message` - Log message
-- `request_id` - Unique request identifier
-- `service` - Service name
-- Additional contextual fields
 
 ## 🔒 Security
 
 ### Authentication
-- API key authentication for all endpoints
-- Request validation and sanitization
-- Rate limiting per client
 
-### Data Protection
-- Encrypted database connections
-- Secure API key storage
-- Input validation and output sanitization
+The API uses JWT-based authentication. Include the token in the Authorization header:
 
-### Best Practices
-- Regular dependency updates
-- Security scanning with `gosec`
-- Vulnerability checking with `govulncheck`
-
-## 🚢 Deployment
-
-### Production Deployment
-
-1. **Build release binaries**
 ```bash
-make release
+Authorization: Bearer your-jwt-token
 ```
 
-2. **Deploy with Docker**
+### Rate Limiting
+
+- Default: 100 requests per minute per IP
+- Configurable via `RATE_LIMIT_REQUESTS_PER_MINUTE`
+
+### Input Validation
+
+- All inputs are validated using Go struct tags
+- SQL injection protection via parameterized queries
+- XSS protection via content sanitization
+
+## 🚀 Performance
+
+### Optimization Features
+
+- **Connection Pooling** - Database and Redis connection pooling
+- **Caching** - Redis-based caching for frequently accessed data
+- **Vector Indexing** - HNSW algorithm for fast vector similarity search
+- **Async Processing** - Non-blocking operations where possible
+
+### Benchmarks
+
+Run benchmarks to check performance:
+
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+make bench
 ```
 
-3. **Configure monitoring**
-   - Set up Prometheus metrics collection
-   - Configure Grafana dashboards
-   - Set up alerting rules
+## 🛠️ Troubleshooting
 
-### Environment-Specific Configurations
+### Common Issues
 
-- **Development**: Full logging, debug endpoints enabled
-- **Staging**: Production-like setup with test data
-- **Production**: Minimal logging, security hardened, monitoring enabled
+1. **Database Connection Issues**
+   ```bash
+   # Check database status
+   make status
+   
+   # Restart database
+   docker-compose restart postgres
+   ```
+
+2. **API Key Issues**
+   ```bash
+   # Verify API keys in .env
+   cat .env | grep API_KEY
+   ```
+
+3. **Port Conflicts**
+   ```bash
+   # Check port usage
+   lsof -i :8080
+   
+   # Change port in .env
+   echo "MCP_SERVER_PORT=8081" >> .env
+   ```
+
+### Logs
+
+```bash
+# Application logs
+make logs
+
+# Docker logs
+make docker-logs
+
+# Specific service logs
+docker-compose logs server
+docker-compose logs postgres
+```
+
+### Debug Mode
+
+```bash
+# Enable debug logging
+echo "LOG_LEVEL=debug" >> .env
+
+# Restart services
+make docker-down && make docker-up
+```
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite (`make test`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Code Guidelines
-- Follow Go best practices and idioms
-- Write comprehensive tests
-- Add documentation for new features
-- Use meaningful commit messages
-- Ensure all CI checks pass
+### Development Guidelines
+
+- Follow Go coding standards
+- Write tests for new features
+- Update documentation
+- Ensure all tests pass: `make check`
 
 ## 📄 License
 
@@ -433,18 +477,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Model Context Protocol](https://github.com/modelcontextprotocol) specification
-- [Google Genkit](https://github.com/firebase/genkit) framework
-- [pgvector](https://github.com/pgvector/pgvector) for vector similarity search
-- [Gin](https://github.com/gin-gonic/gin) web framework
-- All the amazing AI providers and open-source contributors
+- [Genkit](https://github.com/firebase/genkit) - Google's AI framework
+- [Gin](https://github.com/gin-gonic/gin) - HTTP web framework
+- [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search
+- [Prometheus](https://prometheus.io/) - Metrics and monitoring
+- [Grafana](https://grafana.com/) - Visualization and dashboards
 
 ## 📞 Support
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-- **Email**: support@your-domain.com
+- **Documentation**: [Wiki](https://github.com/your-org/mcp-octo-enigma/wiki)
+- **Issues**: [GitHub Issues](https://github.com/your-org/mcp-octo-enigma/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/mcp-octo-enigma/discussions)
 
 ---
 

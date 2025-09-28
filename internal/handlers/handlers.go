@@ -28,7 +28,7 @@ func HealthCheck(c *container.Container) gin.HandlerFunc {
 			},
 			"uptime": "24h30m15s",
 		}
-		
+
 		ctx.JSON(http.StatusOK, status)
 	}
 }
@@ -99,7 +99,7 @@ func GenerateContentStream(c *container.Container) gin.HandlerFunc {
 		for chunk := range streamCh {
 			ctx.SSEvent("message", chunk)
 			ctx.Writer.Flush()
-			
+
 			if chunk.Done {
 				break
 			}
@@ -192,7 +192,7 @@ func CreateFlow(c *container.Container) gin.HandlerFunc {
 func GetFlow(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		flowID := ctx.Param("id")
-		
+
 		flow, err := c.FlowSvc.GetFlow(ctx.Request.Context(), flowID)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{
@@ -210,7 +210,7 @@ func GetFlow(c *container.Container) gin.HandlerFunc {
 func UpdateFlow(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		flowID := ctx.Param("id")
-		
+
 		var flow types.Flow
 		if err := ctx.ShouldBindJSON(&flow); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -238,7 +238,7 @@ func UpdateFlow(c *container.Container) gin.HandlerFunc {
 func DeleteFlow(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		flowID := ctx.Param("id")
-		
+
 		err := c.FlowSvc.DeleteFlow(ctx.Request.Context(), flowID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -247,7 +247,7 @@ func DeleteFlow(c *container.Container) gin.HandlerFunc {
 			})
 			return
 		}
-		
+
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "Flow deleted successfully",
 		})
@@ -258,7 +258,7 @@ func DeleteFlow(c *container.Container) gin.HandlerFunc {
 func ExecuteFlow(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		flowID := ctx.Param("id")
-		
+
 		var req struct {
 			Input      map[string]interface{} `json:"input"`
 			Parameters map[string]interface{} `json:"parameters"`
@@ -605,7 +605,7 @@ func RegisterServer(c *container.Container) gin.HandlerFunc {
 func UnregisterServer(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		serverID := ctx.Param("id")
-		
+
 		err := c.MCPManager.UnregisterServer(serverID)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{
@@ -625,7 +625,7 @@ func UnregisterServer(c *container.Container) gin.HandlerFunc {
 func GetServerStatus(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		serverID := ctx.Param("id")
-		
+
 		server, err := c.MCPManager.GetServer(serverID)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{
@@ -643,7 +643,7 @@ func GetServerStatus(c *container.Container) gin.HandlerFunc {
 func ConnectServer(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		serverID := ctx.Param("id")
-		
+
 		server, err := c.MCPManager.GetServer(serverID)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{
@@ -665,7 +665,7 @@ func ConnectServer(c *container.Container) gin.HandlerFunc {
 func DisconnectServer(c *container.Container) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		serverID := ctx.Param("id")
-		
+
 		server, err := c.MCPManager.GetServer(serverID)
 		if err != nil {
 			ctx.JSON(http.StatusNotFound, gin.H{
@@ -708,9 +708,9 @@ func RunEvaluation(c *container.Container) gin.HandlerFunc {
 			"generation_id": req.GenerationID,
 			"score":         0.85,
 			"metrics": map[string]interface{}{
-				"accuracy":   0.9,
-				"relevance":  0.8,
-				"coherence":  0.85,
+				"accuracy":  0.9,
+				"relevance": 0.8,
+				"coherence": 0.85,
 			},
 			"created_at": "2024-01-01T12:00:00Z",
 		}
@@ -774,9 +774,9 @@ func GetMetrics(c *container.Container) gin.HandlerFunc {
 			"requests_success":   950,
 			"requests_failed":    50,
 			"avg_response_time":  "150ms",
-			"uptime":            "24h30m",
-			"memory_usage":      "512MB",
-			"cpu_usage":         "25%",
+			"uptime":             "24h30m",
+			"memory_usage":       "512MB",
+			"cpu_usage":          "25%",
 			"active_connections": 42,
 		}
 

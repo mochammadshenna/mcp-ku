@@ -186,7 +186,7 @@ func TestContentService_GenerateContent_ValidationError(t *testing.T) {
 
 	// Mock expectations - Genkit should receive the request as-is
 	mockGenkit.On("GenerateContent", mock.Anything, mock.Anything).Return(
-		(*genkit.GenerateContentResponse)(nil), 
+		(*genkit.GenerateContentResponse)(nil),
 		assert.AnError,
 	)
 

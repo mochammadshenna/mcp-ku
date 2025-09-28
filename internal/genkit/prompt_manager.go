@@ -41,7 +41,7 @@ func (pm *PromptManager) CreatePrompt(ctx context.Context, prompt *PromptDefinit
 
 	pm.prompts[prompt.ID] = prompt
 	pm.logger.Infof("Created prompt: %s (%s)", prompt.Name, prompt.ID)
-	
+
 	return nil
 }
 
@@ -75,7 +75,7 @@ func (pm *PromptManager) UpdatePrompt(ctx context.Context, prompt *PromptDefinit
 	prompt.Version++
 	pm.prompts[prompt.ID] = prompt
 	pm.logger.Infof("Updated prompt: %s (%s) to version %d", prompt.Name, prompt.ID, prompt.Version)
-	
+
 	return nil
 }
 
@@ -90,7 +90,7 @@ func (pm *PromptManager) DeletePrompt(ctx context.Context, promptID string) erro
 
 	delete(pm.prompts, promptID)
 	pm.logger.Infof("Deleted prompt: %s", promptID)
-	
+
 	return nil
 }
 
@@ -143,27 +143,27 @@ func (pm *PromptManager) RenderPrompt(ctx context.Context, req *PromptRequest) (
 func (pm *PromptManager) renderTemplate(template string, variables map[string]interface{}) (string, error) {
 	// Simple template rendering using Go's text/template syntax
 	// In a real implementation, you would use a proper template engine
-	
+
 	rendered := template
-	
+
 	// Replace {{.variable}} patterns
 	re := regexp.MustCompile(`\{\{\.(\w+)\}\}`)
 	rendered = re.ReplaceAllStringFunc(rendered, func(match string) string {
 		// Extract variable name
 		varName := strings.Trim(match, "{{.}}")
-		
+
 		// Get variable value
 		if value, exists := variables[varName]; exists {
 			return fmt.Sprintf("%v", value)
 		}
-		
+
 		// Return original match if variable not found
 		return match
 	})
 
 	// Replace {{if condition}}...{{end}} blocks
 	rendered = pm.renderConditionals(rendered, variables)
-	
+
 	// Replace {{range .array}}...{{end}} blocks
 	rendered = pm.renderLoops(rendered, variables)
 
@@ -174,7 +174,7 @@ func (pm *PromptManager) renderTemplate(template string, variables map[string]in
 func (pm *PromptManager) renderConditionals(template string, variables map[string]interface{}) string {
 	// Simple conditional rendering
 	// This is a basic implementation - in production, use a proper template engine
-	
+
 	re := regexp.MustCompile(`\{\{if \.(\w+)\}\}(.*?)\{\{end\}\}`)
 	return re.ReplaceAllStringFunc(template, func(match string) string {
 		// Extract condition and content
@@ -182,10 +182,10 @@ func (pm *PromptManager) renderConditionals(template string, variables map[strin
 		if len(matches) < 3 {
 			return match
 		}
-		
+
 		condition := matches[1]
 		content := matches[2]
-		
+
 		// Check if condition is true
 		if value, exists := variables[condition]; exists {
 			if boolValue, ok := value.(bool); ok && boolValue {
@@ -195,7 +195,7 @@ func (pm *PromptManager) renderConditionals(template string, variables map[strin
 				return content
 			}
 		}
-		
+
 		return ""
 	})
 }
@@ -204,7 +204,7 @@ func (pm *PromptManager) renderConditionals(template string, variables map[strin
 func (pm *PromptManager) renderLoops(template string, variables map[string]interface{}) string {
 	// Simple loop rendering
 	// This is a basic implementation - in production, use a proper template engine
-	
+
 	re := regexp.MustCompile(`\{\{range \.(\w+)\}\}(.*?)\{\{end\}\}`)
 	return re.ReplaceAllStringFunc(template, func(match string) string {
 		// Extract array name and content
@@ -212,10 +212,10 @@ func (pm *PromptManager) renderLoops(template string, variables map[string]inter
 		if len(matches) < 3 {
 			return match
 		}
-		
+
 		arrayName := matches[1]
 		content := matches[2]
-		
+
 		// Get array from variables
 		if value, exists := variables[arrayName]; exists {
 			if arr, ok := value.([]interface{}); ok {
@@ -228,7 +228,7 @@ func (pm *PromptManager) renderLoops(template string, variables map[string]inter
 				return result.String()
 			}
 		}
-		
+
 		return ""
 	})
 }
@@ -237,11 +237,11 @@ func (pm *PromptManager) renderLoops(template string, variables map[string]inter
 func (pm *PromptManager) getUsedVariables(template string) []string {
 	var variables []string
 	seen := make(map[string]bool)
-	
+
 	// Find all {{.variable}} patterns
 	re := regexp.MustCompile(`\{\{\.(\w+)\}\}`)
 	matches := re.FindAllStringSubmatch(template, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			varName := match[1]
@@ -251,7 +251,7 @@ func (pm *PromptManager) getUsedVariables(template string) []string {
 			}
 		}
 	}
-	
+
 	return variables
 }
 

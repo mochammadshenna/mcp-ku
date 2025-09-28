@@ -12,8 +12,6 @@ import (
 	"mcp-octo-enigma/internal/config"
 	"mcp-octo-enigma/internal/container"
 	"mcp-octo-enigma/internal/server"
-
-	"github.com/gin-gonic/gin"
 )
 
 // @title MCP Octo Enigma API

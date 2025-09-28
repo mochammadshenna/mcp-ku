@@ -47,7 +47,7 @@ func RunMigrations(databaseURL string) error {
 // createPgVectorExtension creates the pgvector extension
 func createPgVectorExtension(db *sql.DB) error {
 	query := `CREATE EXTENSION IF NOT EXISTS vector;`
-	
+
 	_, err := db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to create vector extension: %w", err)

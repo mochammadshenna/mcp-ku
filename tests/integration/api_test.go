@@ -61,13 +61,13 @@ func (suite *APITestSuite) TearDownSuite() {
 func (suite *APITestSuite) TestHealthCheck() {
 	req, _ := http.NewRequest("GET", "/health", nil)
 	w := httptest.NewRecorder()
-	
+
 	// Use the router from the server
 	router := suite.server.GetRouter()
 	router.ServeHTTP(w, req)
 
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	
+
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
@@ -166,7 +166,7 @@ func (suite *APITestSuite) TestListTools() {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(suite.T(), err)
 	assert.Contains(suite.T(), response, "tools")
-	
+
 	tools := response["tools"].([]interface{})
 	assert.Greater(suite.T(), len(tools), 0) // Should have built-in tools
 }
@@ -215,9 +215,9 @@ func (suite *APITestSuite) TestListMCPServers() {
 
 func (suite *APITestSuite) TestRegisterMCPServer() {
 	serverData := map[string]interface{}{
-		"name":        "test-server",
-		"url":         "http://localhost:8081",
-		"description": "A test MCP server",
+		"name":         "test-server",
+		"url":          "http://localhost:8081",
+		"description":  "A test MCP server",
 		"capabilities": []string{"tools", "prompts"},
 	}
 
@@ -260,7 +260,7 @@ func (suite *APITestSuite) TestEmbedText() {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(suite.T(), err)
 		assert.Contains(suite.T(), response, "embedding")
-		
+
 		embedding := response["embedding"].([]interface{})
 		assert.Greater(suite.T(), len(embedding), 0)
 	}

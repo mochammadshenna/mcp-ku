@@ -93,8 +93,8 @@ func TestPromptManager_CreatePrompt(t *testing.T) {
 
 	// Test data
 	prompt := &types.Prompt{
-		Name:     "test-prompt",
-		Template: "Hello {{.name}}, how are you?",
+		Name:      "test-prompt",
+		Template:  "Hello {{.name}}, how are you?",
 		Variables: []string{"name"},
 		Config: map[string]interface{}{
 			"temperature": 0.7,

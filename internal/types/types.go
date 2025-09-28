@@ -6,15 +6,15 @@ import (
 
 // MCPServer represents an MCP server configuration
 type MCPServer struct {
-	ID          string            `json:"id" db:"id"`
-	Name        string            `json:"name" db:"name"`
-	URL         string            `json:"url" db:"url"`
-	Description string            `json:"description" db:"description"`
-	Capabilities []string         `json:"capabilities" db:"capabilities"`
-	Config      map[string]interface{} `json:"config" db:"config"`
-	Status      string            `json:"status" db:"status"`
-	CreatedAt   time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at" db:"updated_at"`
+	ID           string                 `json:"id" db:"id"`
+	Name         string                 `json:"name" db:"name"`
+	URL          string                 `json:"url" db:"url"`
+	Description  string                 `json:"description" db:"description"`
+	Capabilities []string               `json:"capabilities" db:"capabilities"`
+	Config       map[string]interface{} `json:"config" db:"config"`
+	Status       string                 `json:"status" db:"status"`
+	CreatedAt    time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at" db:"updated_at"`
 }
 
 // Tool represents a callable tool
@@ -55,12 +55,12 @@ type Flow struct {
 
 // FlowStep represents a step in a flow
 type FlowStep struct {
-	ID          string                 `json:"id"`
-	Type        string                 `json:"type"` // "generate", "tool", "prompt", etc.
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Config      map[string]interface{} `json:"config"`
-	Dependencies []string              `json:"dependencies,omitempty"`
+	ID           string                 `json:"id"`
+	Type         string                 `json:"type"` // "generate", "tool", "prompt", etc.
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	Config       map[string]interface{} `json:"config"`
+	Dependencies []string               `json:"dependencies,omitempty"`
 }
 
 // FlowExecution represents a flow execution instance
@@ -78,24 +78,24 @@ type FlowExecution struct {
 
 // Prompt represents a dotprompt template
 type Prompt struct {
-	ID          string                 `json:"id" db:"id"`
-	Name        string                 `json:"name" db:"name"`
-	Template    string                 `json:"template" db:"template"`
-	Variables   []string               `json:"variables" db:"variables"`
-	Config      map[string]interface{} `json:"config" db:"config"`
-	Version     int                    `json:"version" db:"version"`
-	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
+	ID        string                 `json:"id" db:"id"`
+	Name      string                 `json:"name" db:"name"`
+	Template  string                 `json:"template" db:"template"`
+	Variables []string               `json:"variables" db:"variables"`
+	Config    map[string]interface{} `json:"config" db:"config"`
+	Version   int                    `json:"version" db:"version"`
+	CreatedAt time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at" db:"updated_at"`
 }
 
 // VectorDocument represents a document with vector embeddings
 type VectorDocument struct {
-	ID          string    `json:"id" db:"id"`
-	Content     string    `json:"content" db:"content"`
-	Embedding   []float64 `json:"embedding" db:"embedding"`
-	Metadata    map[string]interface{} `json:"metadata" db:"metadata"`
-	Source      string    `json:"source" db:"source"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID        string                 `json:"id" db:"id"`
+	Content   string                 `json:"content" db:"content"`
+	Embedding []float64              `json:"embedding" db:"embedding"`
+	Metadata  map[string]interface{} `json:"metadata" db:"metadata"`
+	Source    string                 `json:"source" db:"source"`
+	CreatedAt time.Time              `json:"created_at" db:"created_at"`
 }
 
 // VectorSearchResult represents a vector search result
@@ -142,30 +142,30 @@ type EvaluationResult struct {
 
 // Metric represents an observability metric
 type Metric struct {
-	Name      string                 `json:"name"`
-	Value     float64                `json:"value"`
-	Labels    map[string]string      `json:"labels"`
-	Timestamp time.Time              `json:"timestamp"`
-	Type      string                 `json:"type"` // "counter", "gauge", "histogram", etc.
+	Name      string            `json:"name"`
+	Value     float64           `json:"value"`
+	Labels    map[string]string `json:"labels"`
+	Timestamp time.Time         `json:"timestamp"`
+	Type      string            `json:"type"` // "counter", "gauge", "histogram", etc.
 }
 
 // Trace represents a distributed trace
 type Trace struct {
-	ID        string                 `json:"id"`
-	Operation string                 `json:"operation"`
-	StartTime time.Time              `json:"start_time"`
-	EndTime   *time.Time             `json:"end_time,omitempty"`
-	Duration  *time.Duration         `json:"duration,omitempty"`
-	Status    string                 `json:"status"` // "ok", "error", "timeout"
-	Tags      map[string]string      `json:"tags"`
-	Logs      []TraceLog             `json:"logs"`
-	Children  []Trace                `json:"children,omitempty"`
+	ID        string            `json:"id"`
+	Operation string            `json:"operation"`
+	StartTime time.Time         `json:"start_time"`
+	EndTime   *time.Time        `json:"end_time,omitempty"`
+	Duration  *time.Duration    `json:"duration,omitempty"`
+	Status    string            `json:"status"` // "ok", "error", "timeout"
+	Tags      map[string]string `json:"tags"`
+	Logs      []TraceLog        `json:"logs"`
+	Children  []Trace           `json:"children,omitempty"`
 }
 
 // TraceLog represents a log entry within a trace
 type TraceLog struct {
-	Timestamp time.Time         `json:"timestamp"`
-	Level     string            `json:"level"`
-	Message   string            `json:"message"`
+	Timestamp time.Time              `json:"timestamp"`
+	Level     string                 `json:"level"`
+	Message   string                 `json:"message"`
 	Fields    map[string]interface{} `json:"fields"`
 }

@@ -11,7 +11,7 @@ func New(level logrus.Level) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(level)
-	
+
 	// Set JSON formatter for structured logging
 	logger.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000Z",

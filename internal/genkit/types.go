@@ -1,6 +1,7 @@
 package genkit
 
 import (
+	"context"
 	"time"
 )
 
@@ -15,12 +16,12 @@ type AIProvider interface {
 
 // GenerateContentRequest represents a content generation request
 type GenerateContentRequest struct {
-	Model       string                 `json:"model"`
-	Prompt      string                 `json:"prompt"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
-	Tools       []Tool                 `json:"tools,omitempty"`
-	Stream      bool                   `json:"stream,omitempty"`
-	RequestID   string                 `json:"request_id,omitempty"`
+	Model      string                 `json:"model"`
+	Prompt     string                 `json:"prompt"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	Tools      []Tool                 `json:"tools,omitempty"`
+	Stream     bool                   `json:"stream,omitempty"`
+	RequestID  string                 `json:"request_id,omitempty"`
 }
 
 // GenerateContentResponse represents a content generation response
@@ -69,20 +70,20 @@ type ToolCall struct {
 
 // ToolCallRequest represents a request to call a tool
 type ToolCallRequest struct {
-	ToolName   string                 `json:"tool_name"`
-	Arguments  map[string]interface{} `json:"arguments"`
-	RequestID  string                 `json:"request_id,omitempty"`
+	ToolName  string                 `json:"tool_name"`
+	Arguments map[string]interface{} `json:"arguments"`
+	RequestID string                 `json:"request_id,omitempty"`
 }
 
 // ToolCallResponse represents a response from a tool call
 type ToolCallResponse struct {
-	ToolName   string                 `json:"tool_name"`
-	Result     map[string]interface{} `json:"result"`
-	RequestID  string                 `json:"request_id,omitempty"`
-	Status     string                 `json:"status"`
-	Error      string                 `json:"error,omitempty"`
-	CreatedAt  time.Time              `json:"created_at"`
-	CompletedAt *time.Time            `json:"completed_at,omitempty"`
+	ToolName    string                 `json:"tool_name"`
+	Result      map[string]interface{} `json:"result"`
+	RequestID   string                 `json:"request_id,omitempty"`
+	Status      string                 `json:"status"`
+	Error       string                 `json:"error,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
 }
 
 // FlowDefinition represents a flow definition
@@ -116,13 +117,13 @@ type FlowExecutionRequest struct {
 
 // FlowExecutionResponse represents a flow execution response
 type FlowExecutionResponse struct {
-	FlowID     string                 `json:"flow_id"`
-	Output     map[string]interface{} `json:"output"`
-	RequestID  string                 `json:"request_id,omitempty"`
-	Status     string                 `json:"status"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt  time.Time              `json:"created_at"`
-	CompletedAt *time.Time            `json:"completed_at,omitempty"`
+	FlowID      string                 `json:"flow_id"`
+	Output      map[string]interface{} `json:"output"`
+	RequestID   string                 `json:"request_id,omitempty"`
+	Status      string                 `json:"status"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
 }
 
 // PromptDefinition represents a prompt definition
@@ -150,14 +151,14 @@ type PromptResponse struct {
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// InterruptRequest represents an interrupt request
-type InterruptRequest struct {
+// InterruptRequestType represents an interrupt request
+type InterruptRequestType struct {
 	RequestID string `json:"request_id"`
 	Reason    string `json:"reason,omitempty"`
 }
 
-// InterruptResponse represents an interrupt response
-type InterruptResponse struct {
+// InterruptResponseType represents an interrupt response
+type InterruptResponseType struct {
 	RequestID string `json:"request_id"`
 	Status    string `json:"status"` // "interrupted", "not_found", "already_completed"
 	Message   string `json:"message,omitempty"`
@@ -225,19 +226,19 @@ type EmbeddingResponse struct {
 
 // ModelInfo represents information about an AI model
 type ModelInfo struct {
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"` // "text", "embedding", "image", etc.
-	Provider    string                 `json:"provider"`
-	Description string                 `json:"description"`
-	Capabilities []string              `json:"capabilities"`
-	Config      map[string]interface{} `json:"config"`
+	Name         string                 `json:"name"`
+	Type         string                 `json:"type"` // "text", "embedding", "image", etc.
+	Provider     string                 `json:"provider"`
+	Description  string                 `json:"description"`
+	Capabilities []string               `json:"capabilities"`
+	Config       map[string]interface{} `json:"config"`
 }
 
 // ProviderInfo represents information about an AI provider
 type ProviderInfo struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Models      []ModelInfo `json:"models"`
-	Status      string      `json:"status"` // "active", "inactive", "error"
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Models      []ModelInfo            `json:"models"`
+	Status      string                 `json:"status"` // "active", "inactive", "error"
 	Config      map[string]interface{} `json:"config"`
 }

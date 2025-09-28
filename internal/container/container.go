@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"mcp-octo-enigma/internal/cache"
 	"mcp-octo-enigma/internal/config"
 	"mcp-octo-enigma/internal/database"
 	"mcp-octo-enigma/internal/genkit"
@@ -11,7 +12,6 @@ import (
 	"mcp-octo-enigma/internal/mcp"
 	"mcp-octo-enigma/internal/repository"
 	"mcp-octo-enigma/internal/service"
-	"mcp-octo-enigma/internal/cache"
 
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -25,18 +25,18 @@ type Container struct {
 	Cache      cache.Cache
 	GenkitSvc  *genkit.Service
 	MCPManager *mcp.Manager
-	
+
 	// Repositories
-	VectorRepo repository.VectorRepository
-	FlowRepo   repository.FlowRepository
+	VectorRepo     repository.VectorRepository
+	FlowRepo       repository.FlowRepository
 	GenerationRepo repository.GenerationRepository
-	
+
 	// Services
-	ContentSvc    service.ContentService
-	FlowSvc       service.FlowService
-	ToolSvc       service.ToolService
-	EvalSvc       service.EvaluationService
-	ObservabilitySvc service.ObservabilityService
+	ContentSvc       *service.ContentService
+	FlowSvc          *service.FlowService
+	ToolSvc          *service.ToolService
+	EvalSvc          *service.EvaluationService
+	ObservabilitySvc *service.ObservabilityService
 }
 
 // NewContainer creates a new dependency injection container

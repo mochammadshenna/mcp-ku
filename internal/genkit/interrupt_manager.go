@@ -31,7 +31,7 @@ func (im *InterruptManager) InterruptGeneration(ctx context.Context, requestID s
 
 	im.interrupted[requestID] = true
 	im.logger.Infof("Interrupted generation: %s", requestID)
-	
+
 	return nil
 }
 
@@ -50,7 +50,7 @@ func (im *InterruptManager) ClearInterrupt(ctx context.Context, requestID string
 
 	delete(im.interrupted, requestID)
 	im.logger.Debugf("Cleared interrupt: %s", requestID)
-	
+
 	return nil
 }
 
@@ -76,7 +76,7 @@ func (im *InterruptManager) CleanupInterrupts(ctx context.Context) error {
 	// In a real implementation, you'd track timestamps and clean up old ones
 	im.interrupted = make(map[string]bool)
 	im.logger.Info("Cleaned up old interrupts")
-	
+
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (im *InterruptManager) ProcessInterruptRequest(ctx context.Context, req *In
 // GetInterruptStatus gets the interrupt status for a request ID
 func (im *InterruptManager) GetInterruptStatus(ctx context.Context, requestID string) (*InterruptResponse, error) {
 	isInterrupted := im.IsInterrupted(requestID)
-	
+
 	status := "active"
 	if isInterrupted {
 		status = "interrupted"
@@ -175,7 +175,7 @@ func (im *InterruptManager) ResumeGeneration(ctx context.Context, requestID stri
 // BatchInterrupt interrupts multiple generations
 func (im *InterruptManager) BatchInterrupt(ctx context.Context, requestIDs []string) ([]*InterruptResponse, error) {
 	var responses []*InterruptResponse
-	
+
 	for _, requestID := range requestIDs {
 		response, err := im.ProcessInterruptRequest(ctx, &InterruptRequest{
 			RequestID: requestID,
@@ -218,6 +218,6 @@ func (im *InterruptManager) Close() error {
 
 	im.interrupted = make(map[string]bool)
 	im.logger.Info("Interrupt manager closed")
-	
+
 	return nil
 }

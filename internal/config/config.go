@@ -10,13 +10,13 @@ import (
 )
 
 type Config struct {
-	Database Database
-	Server   Server
-	Firebase Firebase
-	AI       AI
-	Logger   Logger
-	Redis    Redis
-	Security Security
+	Database   Database
+	Server     Server
+	Firebase   Firebase
+	AI         AI
+	Logger     Logger
+	Redis      Redis
+	Security   Security
 	Monitoring Monitoring
 }
 
@@ -45,11 +45,11 @@ type Firebase struct {
 }
 
 type AI struct {
-	GoogleAI     GoogleAI
-	OpenAI       OpenAI
-	Anthropic    Anthropic
-	VertexAI     VertexAI
-	Ollama       Ollama
+	GoogleAI  GoogleAI
+	OpenAI    OpenAI
+	Anthropic Anthropic
+	VertexAI  VertexAI
+	Ollama    Ollama
 }
 
 type GoogleAI struct {

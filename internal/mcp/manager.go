@@ -55,20 +55,20 @@ func (m *Manager) registerDefaultServers() {
 	// Example default servers - in production, these would be loaded from config
 	defaultServers := []*types.MCPServer{
 		{
-			ID:          "local-tools",
-			Name:        "Local Tools Server",
-			URL:         "http://localhost:8081",
-			Description: "Local MCP server for tool management",
+			ID:           "local-tools",
+			Name:         "Local Tools Server",
+			URL:          "http://localhost:8081",
+			Description:  "Local MCP server for tool management",
 			Capabilities: []string{"tools", "prompts"},
-			Status:      "inactive",
+			Status:       "inactive",
 		},
 		{
-			ID:          "vector-search",
-			Name:        "Vector Search Server",
-			URL:         "http://localhost:8082",
-			Description: "MCP server for vector search operations",
+			ID:           "vector-search",
+			Name:         "Vector Search Server",
+			URL:          "http://localhost:8082",
+			Description:  "MCP server for vector search operations",
 			Capabilities: []string{"vectors", "embeddings"},
-			Status:      "inactive",
+			Status:       "inactive",
 		},
 	}
 
@@ -188,11 +188,11 @@ func (m *Manager) BroadcastRequest(ctx context.Context, request interface{}) map
 
 			// Send request to server (implementation depends on request type)
 			result, err := srv.Client.SendRequest(ctx, request)
-			
+
 			mu.Lock()
 			if err != nil {
 				results[srv.ID] = map[string]interface{}{
-					"error": err.Error(),
+					"error":  err.Error(),
 					"server": srv.Config.Name,
 				}
 			} else {
@@ -257,7 +257,7 @@ func (m *Manager) connectServer(serverClient *MCPServerClient) {
 		serverClient.Status = "error"
 		serverClient.ErrorCount++
 		m.mu.Unlock()
-		
+
 		m.logger.Errorf("Failed to connect to MCP server %s: %v", serverClient.Config.Name, err)
 		return
 	}
@@ -301,7 +301,7 @@ func (m *Manager) checkServerHealth(serverClient *MCPServerClient) {
 	defer cancel()
 
 	err := serverClient.Client.Ping(ctx)
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -327,7 +327,7 @@ func (m *Manager) GetServerStats() map[string]interface{} {
 		"total_servers":  len(m.servers),
 		"active_servers": 0,
 		"error_servers":  0,
-		"servers": make([]map[string]interface{}, 0, len(m.servers)),
+		"servers":        make([]map[string]interface{}, 0, len(m.servers)),
 	}
 
 	for _, server := range m.servers {

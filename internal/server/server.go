@@ -2,17 +2,15 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"time"
 
 	"mcp-octo-enigma/internal/container"
 	"mcp-octo-enigma/internal/handlers"
 	"mcp-octo-enigma/internal/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/gin-swagger"
 	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 )
 
 // Server represents the HTTP server
