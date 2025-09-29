@@ -1,32 +1,162 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+bin/
+dist/
 
 # Test binary, built with `go test -c`
 *.test
 
-# Code coverage profiles and other test artifacts
+# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-coverage.*
-*.coverprofile
-profile.cov
+coverage.html
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
-go.work.sum
 
-# env file
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components
+
+# node_modules
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+backups/
+*.backup
+*.bak
+
+# Configuration files with secrets
+config/firebase-credentials.json
+config/*.key
+config/*.pem
+config/*.p12
+
+# Docker
+.dockerignore
+
+# Air (hot reload)
+tmp/
+
+# Swagger generated files
+docs/swagger/
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Profiling files
+*.prof
+cpu.prof
+mem.prof
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# Monitoring data
+monitoring/data/
+prometheus_data/
+grafana_data/
+jaeger_data/
+
+# Ollama models
+ollama_data/
